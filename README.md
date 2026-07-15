@@ -230,6 +230,12 @@ Linux version 5.4.18-152-generic
 GCC 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.1)
 ```
 
+Validated aarch64 kernel baseline:
+
+```text
+Linux version 6.6.0-58-generic #57-KYLINOS SMP Thu Dec 18 12:24:49 UTC 2025 aarch64
+```
+
 Kylin uses the Debian SDK package mapping in `sdk.json`.
 
 ### openEuler
