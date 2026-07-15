@@ -69,7 +69,7 @@ latest_version() {
 
 list_packages() {
   python3 "$SCRIPT_DIR/json_query.py" list "$SDK_JSON" |
-    awk 'BEGIN {printf "%-10s %-12s %-10s %-55s %s\n", "VERSION", "OS", "ARCH", "FILE", "MD5"} {printf "%-10s %-12s %-10s %-55s %s\n", $1, $2, $3, $4, $5}'
+    awk 'BEGIN {printf "%-10s %-12s %-10s %-55s %s\n", "SDK_VER", "OS", "ARCH", "FILE", "MD5"} {printf "%-10s %-12s %-10s %-55s %s\n", $1, $2, $3, $4, $5}'
 }
 
 parse_common_options() {
