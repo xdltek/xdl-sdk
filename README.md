@@ -141,7 +141,7 @@ bash sdk_manager.sh verify --version 1.6.7.2
 bash sdk_manager.sh version
 ```
 
-## RUN 包手动操作说明（openEuler 示例）
+## RUN 包手动操作说明（openEuler）
 
 推荐客户优先使用 `install.sh` 或 `sdk_manager.sh` 完成下载、校验、安装、更新和卸载。
 以下流程适用于已经手动获取 `.run` 安装包，或需要进行现场排查的场景。
@@ -206,14 +206,33 @@ rpp-dkms-2.0.16.3-1.noarch
 azurengine-rpp-rpp-configuration-1-1.x86_64
 azurengine-rpp-drv-api-1-1.x86_64
 azurengine-ae-smi-1-1.x86_64
-azurengine-rpp-tool-chain-main-1-1.x86_64
+azurengine-rpp-tool-chain-rppblas-1-1.x86_64
 azurengine-rpp-system-config-1-1.noarch
+azurengine-rpp-tool-chain-main-1-1.x86_64
+azurengine-rpp-perf-1-1.x86_64
+azurengine-rpp-mpu-tools-1-1.x86_64
+azurengine-rpp-tool-chain-rppfft-1-1.x86_64
 ```
 
 如需查看某个 RPM 包的详细信息：
 
 ```bash
+rpm -qi <pkg_name>
 rpm -qi azurengine-rpp-drv-api-1-1.x86_64
+```
+
+示例输出：
+
+```text
+Name        : azurengine-rpp-drv-api
+Version     : 1
+Release     : 1
+Architecture: x86_64
+Group       : azurengine
+Size        : 12546928
+License     : GPL
+Source RPM  : azurengine-rpp-drv-api-1-1.src.rpm
+Summary     : Package created with checkinstall 1.6.2
 ```
 
 ### 检查 RPP 驱动状态
@@ -223,6 +242,8 @@ rpm -qi azurengine-rpp-drv-api-1-1.x86_64
 ```bash
 ae-smi
 ```
+
+如果 `ae-smi` 正常显示设备信息或监控界面，表示 RPP 卡和驱动已正常工作。
 
 如果出现如下信息，表示当前未发现可用设备或驱动尚未生效：
 
@@ -268,14 +289,6 @@ rpm -qa | grep -Ei "rpp|azurengine|xdl"
 
 如果仍有残留包，先确认是否仍有 `rpp_server` 或其他 RPP 相关进程正在运行。
 关闭相关进程后，再重新执行卸载脚本。
-
-在 Debian、Ubuntu 或 Kylin 平台，如果 `dpkg -l` 中仍看到 `rc` 或 `ii` 状态残留，
-可按需执行清理：
-
-```bash
-sudo apt purge -y azurengine-rpp-system-config rpp-dkms
-sudo apt autoremove -y
-```
 
 ## 支持平台
 

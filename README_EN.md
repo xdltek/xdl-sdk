@@ -148,7 +148,7 @@ Show installed SDK version:
 bash sdk_manager.sh version
 ```
 
-## Manual RUN Package Operations (openEuler Example)
+## Manual RUN Package Operations (openEuler)
 
 Customers should normally use `install.sh` or `sdk_manager.sh` for download,
 MD5 verification, installation, update, and uninstall workflows. The following
@@ -215,14 +215,33 @@ rpp-dkms-2.0.16.3-1.noarch
 azurengine-rpp-rpp-configuration-1-1.x86_64
 azurengine-rpp-drv-api-1-1.x86_64
 azurengine-ae-smi-1-1.x86_64
-azurengine-rpp-tool-chain-main-1-1.x86_64
+azurengine-rpp-tool-chain-rppblas-1-1.x86_64
 azurengine-rpp-system-config-1-1.noarch
+azurengine-rpp-tool-chain-main-1-1.x86_64
+azurengine-rpp-perf-1-1.x86_64
+azurengine-rpp-mpu-tools-1-1.x86_64
+azurengine-rpp-tool-chain-rppfft-1-1.x86_64
 ```
 
 To inspect a specific RPM package:
 
 ```bash
+rpm -qi <pkg_name>
 rpm -qi azurengine-rpp-drv-api-1-1.x86_64
+```
+
+Example output:
+
+```text
+Name        : azurengine-rpp-drv-api
+Version     : 1
+Release     : 1
+Architecture: x86_64
+Group       : azurengine
+Size        : 12546928
+License     : GPL
+Source RPM  : azurengine-rpp-drv-api-1-1.src.rpm
+Summary     : Package created with checkinstall 1.6.2
 ```
 
 ### Check RPP Driver Status
@@ -233,6 +252,9 @@ Use `ae-smi` to confirm whether the RPP driver and device are available. Press
 ```bash
 ae-smi
 ```
+
+If `ae-smi` displays device information or the monitoring interface normally,
+the RPP card and driver are working.
 
 If the following warning appears, no available device was detected or the driver
 has not taken effect:
@@ -279,14 +301,6 @@ No output means the related RPM packages have been removed.
 
 If packages remain, confirm that `rpp_server` or other RPP-related processes are
 not running, stop them, and run the uninstall script again.
-
-On Debian, Ubuntu, or Kylin platforms, if `dpkg -l` still shows `rc` or `ii`
-entries, clean them as needed:
-
-```bash
-sudo apt purge -y azurengine-rpp-system-config rpp-dkms
-sudo apt autoremove -y
-```
 
 ## Supported OS
 
