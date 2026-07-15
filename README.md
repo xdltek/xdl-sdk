@@ -141,6 +141,111 @@ bash sdk_manager.sh verify --version 1.6.7.2
 bash sdk_manager.sh version
 ```
 
+## 安装后确认
+
+安装完成后，可以通过包管理器和 `ae-smi` 确认 SDK 与 RPP 驱动是否正常。
+
+### openEuler
+
+检查已安装的 XDL/RPP RPM 包：
+
+```bash
+rpm -qa | grep -Ei "rpp|azurengine|xdl"
+```
+
+示例输出：
+
+```text
+rpp-dkms-2.0.16.3-1.noarch
+azurengine-rpp-rpp-configuration-1-1.x86_64
+azurengine-rpp-drv-api-1-1.x86_64
+azurengine-ae-smi-1-1.x86_64
+azurengine-rpp-tool-chain-rppblas-1-1.x86_64
+azurengine-rpp-system-config-1-1.noarch
+azurengine-rpp-tool-chain-main-1-1.x86_64
+azurengine-rpp-perf-1-1.x86_64
+azurengine-rpp-mpu-tools-1-1.x86_64
+azurengine-rpp-tool-chain-rppfft-1-1.x86_64
+```
+
+如需查看某个 RPM 包的详细信息：
+
+```bash
+rpm -qi <pkg_name>
+rpm -qi azurengine-rpp-drv-api-1-1.x86_64
+```
+
+### Debian / Ubuntu / Kylin
+
+检查已安装的 XDL/RPP DEB 包：
+
+```bash
+dpkg -l | grep -Ei "rpp|azurengine|xdl"
+```
+
+### RPP 驱动状态
+
+使用 `ae-smi` 判断驱动是否生效，退出按 `q`：
+
+```bash
+ae-smi
+```
+
+如果 `ae-smi` 正常显示设备信息或监控界面，表示 RPP 卡和驱动已正常工作。
+
+如果出现如下信息，表示驱动或设备当前未生效：
+
+```text
+Warning: No devices initialized successfully. init false
+Warning: ae-smi init false.
+Warning: No DEV to monitor.
+```
+
+处理方式：
+
+1. 推荐重启机器。重启后，DKMS 会自动加载对应内核模块。
+2. 如果现场不方便重启，可手动加载驱动：
+
+```bash
+cd /lib/modules/$(uname -r)/updates/dkms/
+sudo xz -dk /lib/modules/$(uname -r)/updates/dkms/rpp.ko.xz
+sudo insmod rpp.ko
+sudo chmod 666 /dev/rpp0_entire_ctrl /dev/ve0_entire_ctrl
+```
+
+## 卸载后确认
+
+执行卸载命令后，`sdk_manager.sh uninstall` 会自动检查是否仍有 XDL/RPP 相关包残留。
+如果发现残留包，脚本会返回错误并打印对应平台的清理命令。
+
+openEuler 手动检查：
+
+```bash
+rpm -qa | grep -Ei "rpp|azurengine|xdl"
+```
+
+Debian / Ubuntu / Kylin 手动检查：
+
+```bash
+dpkg -l | grep -Ei "rpp|azurengine|xdl"
+```
+
+如果没有输出，表示相关包已卸载完成。如果仍有残留，请先确认没有 `rpp_server`
+或其他 RPP 相关进程正在运行，再执行清理。
+
+openEuler 清理示例：
+
+```bash
+sudo dnf remove -y <residual_package_names>
+```
+
+Debian / Ubuntu / Kylin 清理示例：
+
+```bash
+sudo apt purge -y azurengine-rpp-system-config rpp-dkms azurengine-rpp-drv-api-mps-off
+sudo apt autoremove -y
+```
+
 ## 支持平台
 
 当前 `sdk.json` 支持：

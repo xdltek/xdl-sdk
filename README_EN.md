@@ -148,6 +148,114 @@ Show installed SDK version:
 bash sdk_manager.sh version
 ```
 
+## Post-Installation Verification
+
+After installation, confirm the SDK package installation and RPP driver status
+with the system package manager and `ae-smi`.
+
+### openEuler
+
+Check installed XDL/RPP RPM packages:
+
+```bash
+rpm -qa | grep -Ei "rpp|azurengine|xdl"
+```
+
+Example output:
+
+```text
+rpp-dkms-2.0.16.3-1.noarch
+azurengine-rpp-rpp-configuration-1-1.x86_64
+azurengine-rpp-drv-api-1-1.x86_64
+azurengine-ae-smi-1-1.x86_64
+azurengine-rpp-tool-chain-rppblas-1-1.x86_64
+azurengine-rpp-system-config-1-1.noarch
+azurengine-rpp-tool-chain-main-1-1.x86_64
+azurengine-rpp-perf-1-1.x86_64
+azurengine-rpp-mpu-tools-1-1.x86_64
+azurengine-rpp-tool-chain-rppfft-1-1.x86_64
+```
+
+To inspect a specific RPM package:
+
+```bash
+rpm -qi <pkg_name>
+rpm -qi azurengine-rpp-drv-api-1-1.x86_64
+```
+
+### Debian / Ubuntu / Kylin
+
+Check installed XDL/RPP DEB packages:
+
+```bash
+dpkg -l | grep -Ei "rpp|azurengine|xdl"
+```
+
+### RPP Driver Status
+
+Use `ae-smi` to confirm whether the driver has taken effect. Press `q` to exit.
+
+```bash
+ae-smi
+```
+
+If `ae-smi` displays device information or the monitoring interface normally,
+the RPP card and driver are working.
+
+If the following warning appears, the driver or device has not taken effect:
+
+```text
+Warning: No devices initialized successfully. init false
+Warning: ae-smi init false.
+Warning: No DEV to monitor.
+```
+
+Recommended actions:
+
+1. Reboot the machine. DKMS will load the kernel module automatically after reboot.
+2. If reboot is not practical, load the driver manually:
+
+```bash
+cd /lib/modules/$(uname -r)/updates/dkms/
+sudo xz -dk /lib/modules/$(uname -r)/updates/dkms/rpp.ko.xz
+sudo insmod rpp.ko
+sudo chmod 666 /dev/rpp0_entire_ctrl /dev/ve0_entire_ctrl
+```
+
+## Post-Uninstall Verification
+
+After uninstall, `sdk_manager.sh uninstall` automatically checks for residual
+XDL/RPP packages. If residual packages are found, the command returns an error
+and prints a cleanup command for the detected platform.
+
+Manual check on openEuler:
+
+```bash
+rpm -qa | grep -Ei "rpp|azurengine|xdl"
+```
+
+Manual check on Debian / Ubuntu / Kylin:
+
+```bash
+dpkg -l | grep -Ei "rpp|azurengine|xdl"
+```
+
+No output means the related packages have been removed. If residual packages
+remain, first make sure `rpp_server` or other RPP-related processes are stopped.
+
+openEuler cleanup example:
+
+```bash
+sudo dnf remove -y <residual_package_names>
+```
+
+Debian / Ubuntu / Kylin cleanup example:
+
+```bash
+sudo apt purge -y azurengine-rpp-system-config rpp-dkms azurengine-rpp-drv-api-mps-off
+sudo apt autoremove -y
+```
+
 ## Supported OS
 
 Current `sdk.json` supports:
