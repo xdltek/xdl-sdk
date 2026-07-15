@@ -1,4 +1,6 @@
 downloads/
+__pycache__/
+*.py[cod]
 *.run
 *.run.tmp
 *.log
