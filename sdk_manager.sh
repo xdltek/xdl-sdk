@@ -161,6 +161,24 @@ check_disk_for_package() {
   fi
 }
 
+validate_package_size() {
+  if (( PACKAGE_SIZE_BYTES <= 0 )); then
+    return
+  fi
+
+  local actual_size
+  actual_size="$(wc -c < "$PACKAGE_PATH" | tr -d '[:space:]')"
+
+  if [[ "$actual_size" != "$PACKAGE_SIZE_BYTES" ]]; then
+    log_error "Downloaded file size mismatch: $PACKAGE_PATH"
+    log_error "Expected: $PACKAGE_SIZE_BYTES bytes"
+    log_error "Actual:   $actual_size bytes"
+    log_error "The download URL may have returned a Git LFS pointer or an incomplete file."
+    rm -f "$PACKAGE_PATH"
+    exit 1
+  fi
+}
+
 download_package_if_needed() {
   if [[ -f "$PACKAGE_PATH" ]]; then
     if bash "$SCRIPT_DIR/verify_md5.sh" "$PACKAGE_PATH" "$PACKAGE_MD5" >/dev/null 2>&1; then
@@ -175,6 +193,7 @@ download_package_if_needed() {
   log_info "Downloading SDK $PACKAGE_VERSION for $PACKAGE_OS/$PACKAGE_ARCH"
   log_info "URL: $PACKAGE_URL"
   bash "$SCRIPT_DIR/download.sh" "$PACKAGE_URL" "$PACKAGE_PATH"
+  validate_package_size
 }
 
 prepare_package() {
