@@ -73,7 +73,6 @@ xdl-sdk/
 |   |-- upgrade.sh
 |   |-- utils.sh
 |   |-- verify_md5.sh
-|   |-- verify_run_file.sh
 ```
 
 ## File Roles
