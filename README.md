@@ -60,25 +60,25 @@ Default behavior:
 
 ```text
 xdl-sdk/
-|-- install.sh
-|-- sdk_manager.sh
-|-- sdk.json
-|-- README.md
-|-- VERSION
-|-- LICENSE
-|-- images/
-|   `-- logo_color_horizontal.png
-`-- scripts/
-    |-- check_env.sh
-    |-- download.sh
-    |-- get_version.sh
-    |-- json_query.py
-    |-- logger.sh
-    |-- uninstall.sh
-    |-- upgrade.sh
-    |-- utils.sh
-    |-- verify_md5.sh
-    `-- verify_run_file.sh
+  install.sh
+  sdk_manager.sh
+  sdk.json
+  README.md
+  VERSION
+  LICENSE
+  images/
+    logo_color_horizontal.png
+  scripts/
+    check_env.sh
+    download.sh
+    get_version.sh
+    json_query.py
+    logger.sh
+    uninstall.sh
+    upgrade.sh
+    utils.sh
+    verify_md5.sh
+    verify_run_file.sh
 ```
 
 ## File Roles
