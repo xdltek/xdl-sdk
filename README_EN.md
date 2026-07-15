@@ -148,6 +148,146 @@ Show installed SDK version:
 bash sdk_manager.sh version
 ```
 
+## Manual RUN Package Operations (openEuler Example)
+
+Customers should normally use `install.sh` or `sdk_manager.sh` for download,
+MD5 verification, installation, update, and uninstall workflows. The following
+steps are intended for offline installation, manually downloaded `.run`
+packages, or on-site troubleshooting.
+
+### Set Package Path
+
+```bash
+SDK_PATH="/home/admin/xdl_sdk/1.6.7.2/azurengine_sw_1.6.7.2_x86_openEuler.run"
+SDK_DIR="$(dirname "$SDK_PATH")"
+EXTRACT_DIR="$SDK_DIR/output_rpms"
+```
+
+### Install the RUN Package
+
+```bash
+bash "$SDK_PATH"
+```
+
+If the package is in the current directory:
+
+```bash
+bash azurengine_sw_1.6.7.2_x86_openEuler.run
+```
+
+Successful installation usually prints output similar to:
+
+```text
+Verifying...                          ################################# [100%]
+Preparing...                          ################################# [100%]
+Updating / installing...
+   1:azurengine-rpp-system-config-1-1 ################################# [100%]
+
+Installation completed.
+```
+
+Check the installed SDK package version:
+
+```bash
+cat /usr/local/rpp/doc/creation_timestamp.txt
+```
+
+Example output:
+
+```text
+Run file name: azurengine_sw_1.6.7.2_x86_openEuler.run
+Timestamp: 20260714_232544
+Version: 1.6.7.2
+```
+
+### Check Installation Result
+
+openEuler uses RPM packages. Check installed XDL/RPP packages with:
+
+```bash
+rpm -qa | grep -Ei "rpp|azurengine|xdl"
+```
+
+Example output:
+
+```text
+rpp-dkms-2.0.16.3-1.noarch
+azurengine-rpp-rpp-configuration-1-1.x86_64
+azurengine-rpp-drv-api-1-1.x86_64
+azurengine-ae-smi-1-1.x86_64
+azurengine-rpp-tool-chain-main-1-1.x86_64
+azurengine-rpp-system-config-1-1.noarch
+```
+
+To inspect a specific RPM package:
+
+```bash
+rpm -qi azurengine-rpp-drv-api-1-1.x86_64
+```
+
+### Check RPP Driver Status
+
+Use `ae-smi` to confirm whether the RPP driver and device are available. Press
+`q` to exit the interface.
+
+```bash
+ae-smi
+```
+
+If the following warning appears, no available device was detected or the driver
+has not taken effect:
+
+```text
+Warning: No devices initialized successfully. init false
+Warning: ae-smi init false.
+Warning: No DEV to monitor.
+```
+
+Recommended actions:
+
+1. Reboot the machine. DKMS will load the kernel module automatically after reboot.
+2. If reboot is not practical, load the driver manually:
+
+```bash
+cd /lib/modules/$(uname -r)/updates/dkms/
+sudo xz -dk /lib/modules/$(uname -r)/updates/dkms/rpp.ko.xz
+sudo insmod rpp.ko
+sudo chmod 666 /dev/rpp0_entire_ctrl /dev/ve0_entire_ctrl
+```
+
+### Uninstall the SDK
+
+```bash
+bash /usr/local/rpp/doc/uninstall.sh
+```
+
+Successful uninstall usually prints:
+
+```text
+Removing...
+Cleanup...
+Uninstallation completed.
+```
+
+Check again after uninstall:
+
+```bash
+rpm -qa | grep -Ei "rpp|azurengine|xdl"
+```
+
+No output means the related RPM packages have been removed.
+
+If packages remain, confirm that `rpp_server` or other RPP-related processes are
+not running, stop them, and run the uninstall script again.
+
+On Debian, Ubuntu, or Kylin platforms, if `dpkg -l` still shows `rc` or `ii`
+entries, clean them as needed:
+
+```bash
+sudo apt purge -y azurengine-rpp-system-config rpp-dkms
+sudo apt autoremove -y
+```
+
 ## Supported OS
 
 Current `sdk.json` supports:
