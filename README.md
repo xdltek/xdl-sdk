@@ -90,6 +90,10 @@ xdl-sdk/
 
 ## Commands
 
+Root permission is required only for commands that modify the host system:
+`install`, `update`, and `uninstall`. Read-only commands such as `list`,
+`verify`, and `version` do not require `sudo`.
+
 Install latest SDK:
 
 ```bash
@@ -434,6 +438,9 @@ xdl-sdk/
 | `LICENSE` | 仓库许可证。 |
 
 ## 常用命令
+
+只有会修改主机系统的命令需要 root 权限：`install`、`update` 和 `uninstall`。
+只读命令或仅下载校验的命令不需要 `sudo`，例如 `list`、`verify` 和 `version`。
 
 安装最新 SDK：
 
