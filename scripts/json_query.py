@@ -13,10 +13,18 @@ def latest(data):
 
 
 def list_versions(data):
+    os_order = {
+        "ubuntu": 0,
+        "debian": 1,
+        "kylin": 2,
+        "openeuler": 3,
+    }
+
     for version in sorted(data.get("sdk", {}).keys()):
         release = data["sdk"][version]
         packages = release.get("packages", {})
-        for os_id in sorted(packages.keys()):
+        sorted_os_ids = sorted(packages.keys(), key=lambda name: (os_order.get(name, 99), name))
+        for os_id in sorted_os_ids:
             for arch in sorted(packages[os_id].keys()):
                 pkg = packages[os_id][arch]
                 print(f"{version}\t{os_id}\t{arch}\t{pkg['file']}\t{pkg['md5']}")
