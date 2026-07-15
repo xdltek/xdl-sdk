@@ -4,8 +4,34 @@
 
 <h1 align="center">XDL SDK</h1>
 
-Customer-facing installer repository for downloading, verifying, installing,
-updating, and uninstalling XDL SDK releases.
+## Overview
+
+XDL SDK is the official customer-facing delivery entry point for XDL software
+development kit releases.
+
+It provides a consistent way for customers, partners, field application teams,
+and solution integrators to obtain the correct SDK package for their target
+platform, verify package integrity, install the SDK, update to a newer release,
+and uninstall the SDK when required.
+
+This repository represents the company-published SDK delivery channel. It is not
+intended to be an engineering workspace or a temporary package staging area. The
+scripts and metadata in this repository are maintained as part of the external
+SDK release experience.
+
+## What It Provides
+
+- A single public SDK installation entry point: `install.sh`
+- A package manager for SDK lifecycle operations: `sdk_manager.sh`
+- A version and platform package index: `sdk.json`
+- Automatic package selection by OS and CPU architecture
+- SDK package download from the official artifact repository
+- MD5 integrity verification before installation
+- Install, update, uninstall, list, verify, and version commands
+- Dependency and environment checks before SDK installation
+- Rollback support during SDK update failure
+
+## Role in SDK Delivery
 
 This repository does not store SDK installer packages. It reads package metadata
 from `sdk.json` and downloads SDK artifacts from:
