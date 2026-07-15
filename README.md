@@ -166,7 +166,7 @@ Example structure:
         "ubuntu": {
           "x86_64": {
             "file": "azurengine_sw_1.6.7.2_x86_64_debian.run",
-            "url": "https://github.com/xdltek/xdl-sdk-artifacts/raw/main/1.6.7.2/azurengine_sw_1.6.7.2_x86_64_debian.run",
+            "url": "https://raw.githubusercontent.com/xdltek/xdl-sdk-artifacts/main/1.6.7.2/azurengine_sw_1.6.7.2_x86_64_debian.run",
             "md5": "741021ce9d34b1f6b8717c2900fa9fbb"
           }
         }

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "latest": "1.6.7.2",
-  "artifact_base_url": "https://github.com/xdltek/xdl-sdk-artifacts/raw/main",
+  "artifact_base_url": "https://raw.githubusercontent.com/xdltek/xdl-sdk-artifacts/main",
   "sdk": {
     "1.6.7.2": {
       "release_notes": "https://github.com/xdltek/xdl-sdk-artifacts/tree/main/1.6.7.2",
@@ -9,13 +9,13 @@
         "ubuntu": {
           "x86_64": {
             "file": "azurengine_sw_1.6.7.2_x86_64_debian.run",
-            "url": "https://github.com/xdltek/xdl-sdk-artifacts/raw/main/1.6.7.2/azurengine_sw_1.6.7.2_x86_64_debian.run",
+            "url": "https://raw.githubusercontent.com/xdltek/xdl-sdk-artifacts/main/1.6.7.2/azurengine_sw_1.6.7.2_x86_64_debian.run",
             "md5": "741021ce9d34b1f6b8717c2900fa9fbb",
             "size_bytes": 240863938
           },
           "aarch64": {
             "file": "azurengine_sw_v1.6.7.2_aarch64_debian.run",
-            "url": "https://github.com/xdltek/xdl-sdk-artifacts/raw/main/1.6.7.2/azurengine_sw_v1.6.7.2_aarch64_debian.run",
+            "url": "https://raw.githubusercontent.com/xdltek/xdl-sdk-artifacts/main/1.6.7.2/azurengine_sw_v1.6.7.2_aarch64_debian.run",
             "md5": "7a569f92e435b660605506bde6b098d0",
             "size_bytes": 241186978
           }
@@ -23,13 +23,13 @@
         "debian": {
           "x86_64": {
             "file": "azurengine_sw_1.6.7.2_x86_64_debian.run",
-            "url": "https://github.com/xdltek/xdl-sdk-artifacts/raw/main/1.6.7.2/azurengine_sw_1.6.7.2_x86_64_debian.run",
+            "url": "https://raw.githubusercontent.com/xdltek/xdl-sdk-artifacts/main/1.6.7.2/azurengine_sw_1.6.7.2_x86_64_debian.run",
             "md5": "741021ce9d34b1f6b8717c2900fa9fbb",
             "size_bytes": 240863938
           },
           "aarch64": {
             "file": "azurengine_sw_v1.6.7.2_aarch64_debian.run",
-            "url": "https://github.com/xdltek/xdl-sdk-artifacts/raw/main/1.6.7.2/azurengine_sw_v1.6.7.2_aarch64_debian.run",
+            "url": "https://raw.githubusercontent.com/xdltek/xdl-sdk-artifacts/main/1.6.7.2/azurengine_sw_v1.6.7.2_aarch64_debian.run",
             "md5": "7a569f92e435b660605506bde6b098d0",
             "size_bytes": 241186978
           }
@@ -37,13 +37,13 @@
         "kylin": {
           "x86_64": {
             "file": "azurengine_sw_1.6.7.2_x86_64_debian.run",
-            "url": "https://github.com/xdltek/xdl-sdk-artifacts/raw/main/1.6.7.2/azurengine_sw_1.6.7.2_x86_64_debian.run",
+            "url": "https://raw.githubusercontent.com/xdltek/xdl-sdk-artifacts/main/1.6.7.2/azurengine_sw_1.6.7.2_x86_64_debian.run",
             "md5": "741021ce9d34b1f6b8717c2900fa9fbb",
             "size_bytes": 240863938
           },
           "aarch64": {
             "file": "azurengine_sw_v1.6.7.2_aarch64_debian.run",
-            "url": "https://github.com/xdltek/xdl-sdk-artifacts/raw/main/1.6.7.2/azurengine_sw_v1.6.7.2_aarch64_debian.run",
+            "url": "https://raw.githubusercontent.com/xdltek/xdl-sdk-artifacts/main/1.6.7.2/azurengine_sw_v1.6.7.2_aarch64_debian.run",
             "md5": "7a569f92e435b660605506bde6b098d0",
             "size_bytes": 241186978
           }
@@ -51,7 +51,7 @@
         "openeuler": {
           "x86_64": {
             "file": "azurengine_sw_1.6.7.2_x86_openEuler.run",
-            "url": "https://github.com/xdltek/xdl-sdk-artifacts/raw/main/1.6.7.2/azurengine_sw_1.6.7.2_x86_openEuler.run",
+            "url": "https://raw.githubusercontent.com/xdltek/xdl-sdk-artifacts/main/1.6.7.2/azurengine_sw_1.6.7.2_x86_openEuler.run",
             "md5": "03204afe220e4e7a95647c9e639d707d",
             "size_bytes": 102538510
           }
