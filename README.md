@@ -34,11 +34,8 @@ SDK release experience.
 ## Role in SDK Delivery
 
 This repository does not store SDK installer packages. It reads package metadata
-from `sdk.json` and downloads SDK artifacts from:
-
-```text
-https://github.com/xdltek/xdl-sdk-artifacts
-```
+from `sdk.json` and downloads SDK artifacts from the official XDL release
+artifact source.
 
 ## Quick Start
 
@@ -54,7 +51,7 @@ Default behavior:
 2. Read `sdk.json`.
 3. Select `latest`.
 4. Detect the host OS and architecture.
-5. Download the matching SDK `.run` installer from `xdl-sdk-artifacts`.
+5. Download the matching SDK `.run` installer from the official artifact source.
 6. Verify MD5.
 7. Run the SDK installer.
 8. Cache the installer for rollback.
@@ -270,7 +267,7 @@ Example structure:
         "ubuntu": {
           "x86_64": {
             "file": "azurengine_sw_1.6.7.2_x86_64_debian.run",
-            "url": "https://raw.githubusercontent.com/xdltek/xdl-sdk-artifacts/main/1.6.7.2/azurengine_sw_1.6.7.2_x86_64_debian.run",
+            "url": "<official-artifact-url>",
             "md5": "741021ce9d34b1f6b8717c2900fa9fbb"
           }
         }
@@ -282,11 +279,8 @@ Example structure:
 
 ## Release Notes
 
-Release package files and package-level release notes are hosted in:
-
-```text
-https://github.com/xdltek/xdl-sdk-artifacts
-```
+Release package files and package-level release notes are managed by XDL through
+the official SDK artifact release source.
 
 GitHub release pages can be used for customer-facing release summaries:
 
@@ -298,7 +292,8 @@ https://github.com/xdltek/xdl-sdk/releases
 
 ### Where are SDK packages stored?
 
-SDK `.run` packages are stored in `xdl-sdk-artifacts`, not in this repository.
+SDK `.run` packages are stored in the official XDL artifact release source, not
+in this repository.
 
 ### Why use `sdk.json`?
 
