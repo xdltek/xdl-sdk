@@ -34,7 +34,7 @@
             "size_bytes": 241186978
           }
         },
-        "uos": {
+        "kylin": {
           "x86_64": {
             "file": "azurengine_sw_1.6.7.2_x86_64_debian.run",
             "url": "https://github.com/xdltek/xdl-sdk-artifacts/raw/main/1.6.7.2/azurengine_sw_1.6.7.2_x86_64_debian.run",

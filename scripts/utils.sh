@@ -20,8 +20,8 @@ detect_os_id() {
     open_euler|openeuler)
       echo "openeuler"
       ;;
-    uniontech|uos)
-      echo "uos"
+    kylin|kylinsec|neokylin)
+      echo "kylin"
       ;;
     *)
       echo "$os_id"

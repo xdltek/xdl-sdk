@@ -30,7 +30,7 @@ Commands:
 
 Common options:
   --version <version>      SDK version to use. Default: latest in sdk.json.
-  --os <os>                Override OS selection. Supported: ubuntu, debian, uos, openeuler.
+  --os <os>                Override OS selection. Supported: ubuntu, debian, kylin, openeuler.
   --arch <arch>            Override architecture selection. Supported: x86_64, aarch64.
   --download-dir <dir>     Package download directory. Default: ./downloads.
   --skip-drv               Pass --skip-drv to the SDK .run installer.

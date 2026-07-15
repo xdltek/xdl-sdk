@@ -141,7 +141,7 @@ Current `sdk.json` supports:
 | --- | --- | --- |
 | Ubuntu | `x86_64`, `aarch64` | Debian SDK package |
 | Debian | `x86_64`, `aarch64` | Debian SDK package |
-| UOS | `x86_64`, `aarch64` | Debian SDK package |
+| Kylin | `x86_64`, `aarch64` | Debian SDK package |
 | openEuler | `x86_64` | openEuler SDK package |
 
 Use overrides only when auto-detection is not sufficient:

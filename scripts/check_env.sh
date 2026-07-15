@@ -63,7 +63,7 @@ check_os() {
   arch="$(detect_arch)"
 
   case "$os_id" in
-    ubuntu|debian|uos|openeuler)
+    ubuntu|debian|kylin|openeuler)
       ;;
     *)
       log_error "Unsupported OS: $os_id"
