@@ -1,0 +1,4 @@
+downloads/
+*.run
+*.run.tmp
+*.log
