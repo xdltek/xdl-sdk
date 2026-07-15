@@ -29,6 +29,74 @@ check_commands() {
   log_info "Required command check passed."
 }
 
+print_dependency_help() {
+  local os_id="$1"
+
+  log_error "Missing required SDK installation dependencies."
+  case "$os_id" in
+    openeuler)
+      cat >&2 <<'EOF'
+
+Install required packages on openEuler:
+
+  sudo dnf install -y cmake
+  sudo dnf install -y dkms
+
+EOF
+      ;;
+    ubuntu|debian|kylin)
+      cat >&2 <<'EOF'
+
+Install required packages on Debian/Ubuntu/Kylin:
+
+  sudo apt update
+  sudo apt install -y cmake
+  sudo apt install -y dkms dctrl-tools build-essential linux-headers-$(uname -r)
+
+If rpp-dkms was left in a half-installed state, repair it first:
+
+  sudo apt --fix-broken install -y
+  sudo dpkg --configure -a
+
+EOF
+      ;;
+  esac
+}
+
+check_sdk_dependencies() {
+  local os_id="$1"
+  local missing=()
+
+  add_missing_dep() {
+    local dep="$1"
+    local item
+    for item in "${missing[@]}"; do
+      [[ "$item" == "$dep" ]] && return
+    done
+    missing+=("$dep")
+  }
+
+  command -v cmake >/dev/null 2>&1 || add_missing_dep "cmake"
+  command -v dkms >/dev/null 2>&1 || add_missing_dep "dkms"
+
+  case "$os_id" in
+    ubuntu|debian|kylin)
+      command -v grep-dctrl >/dev/null 2>&1 || add_missing_dep "dctrl-tools"
+      command -v gcc >/dev/null 2>&1 || add_missing_dep "build-essential"
+      command -v make >/dev/null 2>&1 || add_missing_dep "build-essential"
+      [[ -d "/lib/modules/$(uname -r)/build" ]] || add_missing_dep "linux-headers-$(uname -r)"
+      ;;
+  esac
+
+  if (( ${#missing[@]} > 0 )); then
+    log_error "Missing dependencies: ${missing[*]}"
+    print_dependency_help "$os_id"
+    exit 1
+  fi
+
+  log_info "SDK dependency check passed."
+}
+
 check_network() {
   local url="${NETWORK_CHECK_URL:-https://github.com}"
   if command -v wget >/dev/null 2>&1; then
@@ -81,6 +149,7 @@ check_os() {
   esac
 
   log_info "OS check passed: $os_id/$arch"
+  DETECTED_OS_ID="$os_id"
 }
 
 check_root
@@ -88,3 +157,4 @@ check_commands
 check_network
 check_disk
 check_os
+check_sdk_dependencies "$DETECTED_OS_ID"

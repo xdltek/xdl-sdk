@@ -54,6 +54,15 @@ require_json_tools() {
   require_command chmod
 }
 
+run_env_check_once() {
+  if [[ "${XDL_SDK_ENV_CHECKED:-0}" == "1" ]]; then
+    return
+  fi
+
+  bash "$SCRIPT_DIR/check_env.sh"
+  export XDL_SDK_ENV_CHECKED=1
+}
+
 latest_version() {
   python3 "$SCRIPT_DIR/json_query.py" latest "$SDK_JSON"
 }
@@ -189,6 +198,7 @@ installed_version() {
 
 install_sdk() {
   parse_common_options "$@"
+  run_env_check_once
   require_root
   prepare_package
 
@@ -216,6 +226,7 @@ cleanup_backup() {
 
 update_sdk() {
   parse_common_options "$@"
+  run_env_check_once
   require_root
   prepare_package
 

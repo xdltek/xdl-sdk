@@ -10,4 +10,4 @@ case "${1:-}" in
 esac
 
 bash "$ROOT_DIR/scripts/check_env.sh"
-exec bash "$ROOT_DIR/sdk_manager.sh" install "$@"
+XDL_SDK_ENV_CHECKED=1 exec bash "$ROOT_DIR/sdk_manager.sh" install "$@"

@@ -24,7 +24,7 @@ sudo bash install.sh
 
 Default behavior:
 
-1. Check root permission, network access, downloader tools, disk space, OS, and architecture.
+1. Check root permission, network access, downloader tools, disk space, OS, architecture, and SDK installation dependencies.
 2. Read `sdk.json`.
 3. Select `latest`.
 4. Detect the host OS and architecture.
@@ -211,6 +211,61 @@ Use `--os` and `--arch` overrides:
 
 ```bash
 sudo bash sdk_manager.sh install --os ubuntu --arch x86_64
+```
+
+## Troubleshooting
+
+### Missing prerequisite packages
+
+The SDK `.run` installer includes `rpp-dkms`. Driver installation depends on
+system packages such as `dkms` and `cmake`. If these packages are missing,
+`rpp-dkms` may stop in the `iU` half-installed state and package managers may
+report broken dependencies.
+
+`install.sh` and `sdk_manager.sh install/update` check these dependencies before
+running the SDK installer. If any dependency is missing, the script prints the
+required installation commands and exits before modifying the SDK installation.
+
+#### Debian / Ubuntu / Kylin
+
+Install prerequisites once before installing the SDK:
+
+```bash
+sudo apt update
+sudo apt install -y cmake
+sudo apt install -y dkms dctrl-tools build-essential linux-headers-$(uname -r)
+```
+
+Confirm:
+
+```bash
+dpkg -l dkms dctrl-tools | grep ^ii
+dkms --version
+cmake --version
+```
+
+If a previous installation attempt left `rpp-dkms` in a half-installed state,
+repair the package database before continuing:
+
+```bash
+sudo apt --fix-broken install -y
+sudo dpkg --configure -a
+```
+
+#### openEuler
+
+Install prerequisites once before installing the SDK:
+
+```bash
+sudo dnf install -y cmake
+sudo dnf install -y dkms
+```
+
+Confirm:
+
+```bash
+dkms --version
+cmake --version
 ```
 
 ## License
