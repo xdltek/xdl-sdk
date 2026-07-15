@@ -1,41 +1,36 @@
+<a id="english"></a>
+
 <p align="center">
   <img src="images/logo_color_horizontal.png" width="320" alt="XDL logo">
 </p>
 
 <h1 align="center">XDL SDK</h1>
 
+Language: [English](#english) | [中文](#chinese)
+
 ## Overview
 
-XDL SDK is the official customer-facing delivery entry point for XDL software
-development kit releases.
+XDL SDK is the official SDK delivery portal for XDL customers, partners, and
+solution teams. It provides a consistent, verified, and platform-aware way to
+obtain XDL SDK releases and complete SDK lifecycle operations on supported
+systems.
 
-It provides a consistent way for customers, partners, field application teams,
-and solution integrators to obtain the correct SDK package for their target
-platform, verify package integrity, install the SDK, update to a newer release,
-and uninstall the SDK when required.
+With this repository, users can install, update, verify, list, and uninstall XDL
+SDK packages through a unified command-line experience. The package manager
+automatically selects the correct SDK installer according to the target OS and
+CPU architecture, downloads the release package from the official XDL artifact
+source, verifies integrity with MD5, and executes the SDK installer.
 
-This repository represents the company-published SDK delivery channel. It is not
-intended to be an engineering workspace or a temporary package staging area. The
-scripts and metadata in this repository are maintained as part of the external
-SDK release experience.
+## Key Capabilities
 
-## What It Provides
-
-- A single public SDK installation entry point: `install.sh`
-- A package manager for SDK lifecycle operations: `sdk_manager.sh`
-- A version and platform package index: `sdk.json`
-- Automatic package selection by OS and CPU architecture
-- SDK package download from the official artifact repository
-- MD5 integrity verification before installation
+- One-command SDK installation with `install.sh`
+- Full SDK lifecycle management with `sdk_manager.sh`
+- Platform-aware SDK package selection through `sdk.json`
+- Automatic download from the official XDL artifact source
+- MD5 verification before installation
 - Install, update, uninstall, list, verify, and version commands
-- Dependency and environment checks before SDK installation
-- Rollback support during SDK update failure
-
-## Role in SDK Delivery
-
-This repository does not store SDK installer packages. It reads package metadata
-from `sdk.json` and downloads SDK artifacts from the official XDL release
-artifact source.
+- Environment and dependency checks before installation
+- Rollback support for failed SDK updates
 
 ## Quick Start
 
@@ -45,13 +40,13 @@ cd xdl-sdk
 sudo bash install.sh
 ```
 
-Default behavior:
+Default flow:
 
-1. Check root permission, network access, downloader tools, disk space, OS, architecture, and SDK installation dependencies.
+1. Check root permission, network, downloader tools, disk space, OS, architecture, and SDK dependencies.
 2. Read `sdk.json`.
-3. Select `latest`.
-4. Detect the host OS and architecture.
-5. Download the matching SDK `.run` installer from the official artifact source.
+3. Select the `latest` SDK version.
+4. Detect the host OS and CPU architecture.
+5. Download the matching SDK `.run` installer.
 6. Verify MD5.
 7. Run the SDK installer.
 8. Cache the installer for rollback.
@@ -60,97 +55,90 @@ Default behavior:
 
 ```text
 xdl-sdk/
-  install.sh
-  sdk_manager.sh
-  sdk.json
-  README.md
-  VERSION
-  LICENSE
-  images/
-    logo_color_horizontal.png
-  scripts/
-    check_env.sh
-    download.sh
-    get_version.sh
-    json_query.py
-    logger.sh
-    uninstall.sh
-    upgrade.sh
-    utils.sh
-    verify_md5.sh
-    verify_run_file.sh
+|-- install.sh
+|-- sdk_manager.sh
+|-- sdk.json
+|-- README.md
+|-- VERSION
+|-- LICENSE
+|-- images/
+|   |-- logo_color_horizontal.png
+|-- scripts/
+|   |-- check_env.sh
+|   |-- download.sh
+|   |-- get_version.sh
+|   |-- json_query.py
+|   |-- logger.sh
+|   |-- uninstall.sh
+|   |-- upgrade.sh
+|   |-- utils.sh
+|   |-- verify_md5.sh
+|   |-- verify_run_file.sh
 ```
 
 ## File Roles
 
 | File | Role |
 | --- | --- |
-| `install.sh` | Default customer entry point. Performs environment checks, then calls `sdk_manager.sh install`. |
-| `sdk_manager.sh` | Main SDK package manager. Handles install, update, uninstall, list, verify, and version commands. |
-| `sdk.json` | SDK package index. Defines available versions, supported OS/architecture combinations, download URLs, MD5 values, and release note links. |
-| `README.md` | Customer usage guide. |
+| `install.sh` | Customer entry point. Performs environment checks, then starts SDK installation. |
+| `sdk_manager.sh` | SDK package manager for install, update, uninstall, list, verify, and version operations. |
+| `sdk.json` | SDK package index. Defines versions, supported OS/architecture combinations, download URLs, MD5 values, and release note links. |
+| `scripts/json_query.py` | Internal JSON parser used by `sdk_manager.sh`; users do not need to call it directly. |
+| `scripts/` | Internal helper scripts for environment checks, download, verification, logging, and compatibility wrappers. |
 | `VERSION` | Version of this installer repository. |
 | `LICENSE` | Repository license. |
-| `scripts/` | Internal helper scripts used by `install.sh` and `sdk_manager.sh`. |
 
 ## Commands
 
-### Install latest SDK
+Install latest SDK:
 
 ```bash
 sudo bash install.sh
 ```
 
-Equivalent command:
+Install with package manager:
 
 ```bash
 sudo bash sdk_manager.sh install
 ```
 
-### Install a specific SDK version
+Install a specific SDK version:
 
 ```bash
 sudo bash sdk_manager.sh install --version 1.6.7.2
 ```
 
-### Install without driver build/load
+Install without driver build/load:
 
 ```bash
 sudo bash sdk_manager.sh install --skip-drv
 ```
 
-### Update SDK
+Update SDK:
 
 ```bash
 sudo bash sdk_manager.sh update
 ```
 
-If update fails, `sdk_manager.sh` attempts to roll back with the cached package
-stored at:
-
-```text
-/var/cache/azurengine/sdk_release.run
-```
-
-### Uninstall SDK
+Uninstall SDK:
 
 ```bash
 sudo bash sdk_manager.sh uninstall
 ```
 
-### List downloadable SDK packages
+List downloadable SDK packages:
 
 ```bash
 bash sdk_manager.sh list
 ```
 
-### Verify package download and MD5
+Verify package download and MD5:
 
 ```bash
 bash sdk_manager.sh verify --version 1.6.7.2
 ```
 
-### Show installed SDK version
+Show installed SDK version:
 
 ```bash
 bash sdk_manager.sh version
@@ -177,8 +165,6 @@ sudo bash sdk_manager.sh install --os ubuntu --arch x86_64
 
 ### Installer Script Requirements
 
-The downloader and package manager scripts require:
-
 | Component | Requirement |
 | --- | --- |
 | Shell | Bash |
@@ -186,9 +172,6 @@ The downloader and package manager scripts require:
 | Downloader | `wget` or `curl` |
 | Checksum tool | `md5sum` |
 | Privilege | Root permission for install, update, and uninstall |
-
-`scripts/json_query.py` uses the Python standard `json` module to parse
-`sdk.json`. Users do not need to call it directly.
 
 ### Ubuntu
 
@@ -210,9 +193,6 @@ Minimum requirements:
 | Python | Python 3.11 recommended |
 | Build Tools | `build-essential`, `linux-headers`, `dkms`, `dctrl-tools` |
 
-Systems that do not meet these requirements may encounter installation or
-runtime issues.
-
 ### Kylin
 
 Supported CPU platforms:
@@ -233,8 +213,6 @@ Validated aarch64 kernel baseline:
 Linux version 6.6.0-58-generic #57-KYLINOS SMP Thu Dec 18 12:24:49 UTC 2025 aarch64
 ```
 
-Kylin uses the Debian SDK package mapping in `sdk.json`.
-
 ### openEuler
 
 Supported platform:
@@ -249,12 +227,11 @@ GCC 12.3.1 (openEuler 12.3.1-65.oe2403sp1)
 GNU Binutils 2.41
 ```
 
-openEuler uses the openEuler SDK package mapping in `sdk.json`.
-
 ## SDK Package Index
 
-To add or update SDK versions, edit `sdk.json` only. Do not hard-code package
-URLs in shell scripts.
+SDK package selection is controlled by `sdk.json`. Future SDK releases should be
+added by updating `sdk.json`; package URLs should not be hard-coded in shell
+scripts.
 
 Example structure:
 
@@ -277,41 +254,6 @@ Example structure:
 }
 ```
 
-## Release Notes
-
-Release package files and package-level release notes are managed by XDL through
-the official SDK artifact release source.
-
-GitHub release pages can be used for customer-facing release summaries:
-
-```text
-https://github.com/xdltek/xdl-sdk/releases
-```
-
-## FAQ
-
-### Where are SDK packages stored?
-
-SDK `.run` packages are stored in the official XDL artifact release source, not
-in this repository.
-
-### Why use `sdk.json`?
-
-It decouples package metadata from script logic. Future SDK releases should only
-require a `sdk.json` update.
-
-### What if MD5 verification fails?
-
-Delete the downloaded file under `downloads/<version>/` and rerun the command.
-
-### What if the OS is detected incorrectly?
-
-Use `--os` and `--arch` overrides:
-
-```bash
-sudo bash sdk_manager.sh install --os ubuntu --arch x86_64
-```
-
 ## Troubleshooting
 
 ### Missing prerequisite packages
@@ -327,8 +269,6 @@ required installation commands and exits before modifying the SDK installation.
 
 #### Debian / Ubuntu / Kylin
 
-Install prerequisites once before installing the SDK:
-
 ```bash
 sudo apt update
 sudo apt install -y cmake
@@ -343,8 +283,7 @@ dkms --version
 cmake --version
 ```
 
-If a previous installation attempt left `rpp-dkms` in a half-installed state,
-repair the package database before continuing:
+If a previous installation attempt left `rpp-dkms` in a half-installed state:
 
 ```bash
 sudo apt --fix-broken install -y
@@ -352,8 +291,6 @@ sudo dpkg --configure -a
 ```
 
 #### openEuler
-
-Install prerequisites once before installing the SDK:
 
 ```bash
 sudo dnf install -y cmake
@@ -367,6 +304,334 @@ dkms --version
 cmake --version
 ```
 
+## FAQ
+
+### Where are SDK packages stored?
+
+SDK `.run` packages are stored in the official XDL artifact release source, not
+in this repository.
+
+### What if MD5 verification fails?
+
+Delete the downloaded file under `downloads/<version>/` and rerun the command.
+
+### What if the OS is detected incorrectly?
+
+Use `--os` and `--arch` overrides:
+
+```bash
+sudo bash sdk_manager.sh install --os ubuntu --arch x86_64
+```
+
+## Release Notes
+
+Release package files and package-level release notes are managed by XDL through
+the official SDK artifact release source.
+
+Customer-facing release summaries can be published through:
+
+```text
+https://github.com/xdltek/xdl-sdk/releases
+```
+
 ## License
 
 This repository is licensed under the Apache License 2.0. See [LICENSE](LICENSE).
+
+---
+
+<a id="chinese"></a>
+
+# XDL SDK 中文说明
+
+语言：[English](#english) | [中文](#chinese)
+
+## 概述
+
+XDL SDK 是 XDL 面向客户、合作伙伴和解决方案团队发布 SDK 的官方交付入口。
+它为客户提供统一、可校验、可按平台自动选择的 SDK 获取和安装体验。
+
+通过本仓库，用户可以完成 SDK 的下载、校验、安装、更新、卸载和版本查询。
+工具会根据目标系统和 CPU 架构自动选择对应 SDK 安装包，从 XDL 官方发布源下载，
+完成 MD5 校验后执行安装流程。
+
+## 核心能力
+
+- 统一安装入口：`install.sh`
+- SDK 生命周期管理：`sdk_manager.sh`
+- 通过 `sdk.json` 管理版本、平台、下载地址和 MD5
+- 按 OS 和 CPU 架构自动选择 SDK 包
+- 安装前执行环境和依赖检查
+- 安装前执行 MD5 完整性校验
+- 支持 install、update、uninstall、list、verify、version
+- SDK 更新失败时支持回滚
+
+## 快速开始
+
+```bash
+git clone https://github.com/xdltek/xdl-sdk.git
+cd xdl-sdk
+sudo bash install.sh
+```
+
+默认流程：
+
+1. 检查 root 权限、网络、下载工具、磁盘空间、OS、架构和 SDK 安装依赖。
+2. 读取 `sdk.json`。
+3. 选择 `latest` SDK 版本。
+4. 自动识别主机 OS 和 CPU 架构。
+5. 下载匹配的 SDK `.run` 安装包。
+6. 校验 MD5。
+7. 执行 SDK 安装。
+8. 缓存安装包，用于后续回滚。
+
+## 仓库结构
+
+```text
+xdl-sdk/
+|-- install.sh
+|-- sdk_manager.sh
+|-- sdk.json
+|-- README.md
+|-- VERSION
+|-- LICENSE
+|-- images/
+|   |-- logo_color_horizontal.png
+|-- scripts/
+|   |-- check_env.sh
+|   |-- download.sh
+|   |-- get_version.sh
+|   |-- json_query.py
+|   |-- logger.sh
+|   |-- uninstall.sh
+|   |-- upgrade.sh
+|   |-- utils.sh
+|   |-- verify_md5.sh
+|   |-- verify_run_file.sh
+```
+
+## 文件作用
+
+| 文件 | 作用 |
+| --- | --- |
+| `install.sh` | 客户默认入口。先执行环境检查，再启动 SDK 安装。 |
+| `sdk_manager.sh` | SDK 包管理器，负责安装、更新、卸载、列表、校验和版本查询。 |
+| `sdk.json` | SDK 包索引，维护版本、OS/架构、下载地址、MD5 和 Release 信息。 |
+| `scripts/json_query.py` | `sdk_manager.sh` 内部使用的 JSON 解析工具，用户无需直接调用。 |
+| `scripts/` | 内部辅助脚本，包括环境检查、下载、校验、日志和兼容入口。 |
+| `VERSION` | 本安装器仓库版本。 |
+| `LICENSE` | 仓库许可证。 |
+
+## 常用命令
+
+安装最新 SDK：
+
+```bash
+sudo bash install.sh
+```
+
+使用包管理器安装：
+
+```bash
+sudo bash sdk_manager.sh install
+```
+
+安装指定版本：
+
+```bash
+sudo bash sdk_manager.sh install --version 1.6.7.2
+```
+
+跳过驱动构建/加载：
+
+```bash
+sudo bash sdk_manager.sh install --skip-drv
+```
+
+更新 SDK：
+
+```bash
+sudo bash sdk_manager.sh update
+```
+
+卸载 SDK：
+
+```bash
+sudo bash sdk_manager.sh uninstall
+```
+
+列出可下载 SDK：
+
+```bash
+bash sdk_manager.sh list
+```
+
+校验 SDK 包：
+
+```bash
+bash sdk_manager.sh verify --version 1.6.7.2
+```
+
+查看已安装 SDK 版本：
+
+```bash
+bash sdk_manager.sh version
+```
+
+## 支持平台
+
+当前 `sdk.json` 支持：
+
+| OS | 架构 | 包映射 |
+| --- | --- | --- |
+| Ubuntu | `x86_64`, `aarch64` | Debian SDK 包 |
+| Debian | `x86_64`, `aarch64` | Debian SDK 包 |
+| Kylin | `x86_64`, `aarch64` | Debian SDK 包 |
+| openEuler | `x86_64` | openEuler SDK 包 |
+
+自动识别不满足现场环境时，可手动指定：
+
+```bash
+sudo bash sdk_manager.sh install --os ubuntu --arch x86_64
+```
+
+## 平台要求
+
+### 安装脚本要求
+
+| 组件 | 要求 |
+| --- | --- |
+| Shell | Bash |
+| Python | Python 3，推荐 Python 3.11 |
+| 下载工具 | `wget` 或 `curl` |
+| 校验工具 | `md5sum` |
+| 权限 | install、update、uninstall 需要 root 权限 |
+
+### Ubuntu
+
+支持平台：
+
+- x86_64 主机
+- RK3588
+- RK3568
+
+最低要求：
+
+| 组件 | 要求 |
+| --- | --- |
+| 操作系统 | Ubuntu 20.04 LTS 或兼容 Ubuntu 的发行版 |
+| 系统内存 | 推荐 >= 16 GB DDR5 |
+| CPU 架构 | x86_64 或 aarch64 |
+| 编译器 | GCC 9.4.0 或兼容版本 |
+| CMake | 推荐 >= 3.26.5 |
+| Python | 推荐 Python 3.11 |
+| 构建工具 | `build-essential`, `linux-headers`, `dkms`, `dctrl-tools` |
+
+### Kylin
+
+支持 CPU 平台：
+
+- 海光
+- 飞腾
+
+已验证内核/编译器基线：
+
+```text
+Linux version 5.4.18-152-generic
+GCC 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.1)
+```
+
+已验证 aarch64 内核基线：
+
+```text
+Linux version 6.6.0-58-generic #57-KYLINOS SMP Thu Dec 18 12:24:49 UTC 2025 aarch64
+```
+
+### openEuler
+
+支持平台：
+
+- x86_64 主机
+
+已验证内核/编译器基线：
+
+```text
+Linux version 6.6.0-127.0.0.125.oe2403sp1.x86_64
+GCC 12.3.1 (openEuler 12.3.1-65.oe2403sp1)
+GNU Binutils 2.41
+```
+
+## SDK 包索引
+
+SDK 包选择由 `sdk.json` 控制。后续新增版本时，应更新 `sdk.json`，
+不要把下载地址写死在 Shell 脚本中。
+
+## 故障处理
+
+### 缺少前置依赖
+
+SDK `.run` 安装包中包含 `rpp-dkms`。驱动安装依赖系统中的 `dkms`、
+`cmake` 等软件包。缺少依赖时，`rpp-dkms` 可能停留在 `iU` 半安装状态，
+并导致包管理器报告破损依赖。
+
+`install.sh` 和 `sdk_manager.sh install/update` 会在执行 SDK 安装前检查这些依赖。
+如果发现缺失，会打印安装命令并退出，不会继续修改 SDK 安装状态。
+
+#### Debian / Ubuntu / Kylin
+
+```bash
+sudo apt update
+sudo apt install -y cmake
+sudo apt install -y dkms dctrl-tools build-essential linux-headers-$(uname -r)
+```
+
+确认：
+
+```bash
+dpkg -l dkms dctrl-tools | grep ^ii
+dkms --version
+cmake --version
+```
+
+如果此前因缺依赖导致 `rpp-dkms` 半安装：
+
+```bash
+sudo apt --fix-broken install -y
+sudo dpkg --configure -a
+```
+
+#### openEuler
+
+```bash
+sudo dnf install -y cmake
+sudo dnf install -y dkms
+```
+
+确认：
+
+```bash
+dkms --version
+cmake --version
+```
+
+## FAQ
+
+### SDK 安装包放在哪里？
+
+SDK `.run` 包由 XDL 官方发布源统一管理，本仓库只提供安装和管理入口。
+
+### MD5 校验失败怎么办？
+
+删除 `downloads/<version>/` 下已下载的文件，然后重新执行命令。
+
+### OS 自动识别不符合现场环境怎么办？
+
+使用 `--os` 和 `--arch` 手动指定：
+
+```bash
+sudo bash sdk_manager.sh install --os ubuntu --arch x86_64
+```
+
+## License
+
+本仓库使用 Apache License 2.0，详见 [LICENSE](LICENSE)。
