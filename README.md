@@ -150,6 +150,78 @@ Use overrides only when auto-detection is not sufficient:
 sudo bash sdk_manager.sh install --os ubuntu --arch x86_64
 ```
 
+## Platform Requirements
+
+### Installer Script Requirements
+
+The downloader and package manager scripts require:
+
+| Component | Requirement |
+| --- | --- |
+| Shell | Bash |
+| Python | Python 3, recommended Python 3.11 |
+| Downloader | `wget` or `curl` |
+| Checksum tool | `md5sum` |
+| Privilege | Root permission for install, update, and uninstall |
+
+`scripts/json_query.py` uses the Python standard `json` module to parse
+`sdk.json`. Users do not need to call it directly.
+
+### Ubuntu
+
+Supported platforms:
+
+- x86_64 host
+- RK3588
+- RK3568
+
+Minimum requirements:
+
+| Component | Requirement |
+| --- | --- |
+| Operating System | Ubuntu 20.04 LTS or compatible Ubuntu-based distribution |
+| System Memory | >= 16 GB DDR5 recommended |
+| CPU Architecture | x86_64 or aarch64 |
+| Compiler | GCC 9.4.0 or compatible |
+| CMake | >= 3.26.5 recommended |
+| Python | Python 3.11 recommended |
+| Build Tools | `build-essential`, `linux-headers`, `dkms`, `dctrl-tools` |
+
+Systems that do not meet these requirements may encounter installation or
+runtime issues.
+
+### Kylin
+
+Supported CPU platforms:
+
+- Hygon
+- Phytium
+
+Validated kernel/compiler baseline:
+
+```text
+Linux version 5.4.18-152-generic
+GCC 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.1)
+```
+
+Kylin uses the Debian SDK package mapping in `sdk.json`.
+
+### openEuler
+
+Supported platform:
+
+- x86_64 host
+
+Validated kernel/compiler baseline:
+
+```text
+Linux version 6.6.0-127.0.0.125.oe2403sp1.x86_64
+GCC 12.3.1 (openEuler 12.3.1-65.oe2403sp1)
+GNU Binutils 2.41
+```
+
+openEuler uses the openEuler SDK package mapping in `sdk.json`.
+
 ## SDK Package Index
 
 To add or update SDK versions, edit `sdk.json` only. Do not hard-code package
