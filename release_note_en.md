@@ -21,13 +21,15 @@ stored in Git.
 
 - Detects the host architecture or accepts `--arch x86_64|aarch64`.
 - Supports Ubuntu and Debian package-based systems.
-- Prints a five-stage branded workflow covering compatibility, dependencies, download
-  readiness, the installation plan, and package preparation.
+- Prints a separate installed-version precheck before the five-stage workflow. Compatibility,
+  dependencies, download readiness, the installation plan, and package preparation appear
+  only when work must continue.
 - Checks `curl`, `ca-certificates`, `coreutils`, `libc6`, `libstdc++6`, `dctrl-tools`,
   `build-essential`, `dkms`, and matching kernel headers before installation.
 - Stops if the Debian package database contains incomplete or broken packages.
-- Detects an existing SDK before download: skips the same version and prints optional manual
-  uninstall and reinstall commands; synchronously uninstalls
+- Detects an existing SDK before download: the same version produces a final no-action-required
+  result plus an emphasized optional two-step reinstall path and uninstall-completion warning;
+  synchronously uninstalls
   and verifies removal of an older version after confirmation; blocks overwrite when the
   installed version is newer or unknown and prints the manual uninstall procedure.
 - Checks free disk space, proxy configuration, and artifact-server reachability.

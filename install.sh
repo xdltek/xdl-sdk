@@ -170,6 +170,8 @@ detect_installed_sdk() {
 
 inspect_installed_sdk() {
   detect_installed_sdk
+  section "PRECHECK" "Installed SDK status"
+  printf '  %-42s %-10s %s\n' "CHECK" "STATUS" "DETAILS"
   case "$INSTALLED_SDK_STATE" in
     none)
       status_row "Installed SDK" "OK" "none detected"
@@ -201,6 +203,22 @@ inspect_installed_sdk() {
       fi
       ;;
   esac
+}
+
+print_same_version_result() {
+  section "RESULT" "XDL SDK is ready to use"
+  printf '  %-24s %s\n' "Installed version" "$INSTALLED_SDK_VERSION"
+  printf '  %-24s %s\n' "Requested version" "$SDK_VERSION"
+  printf '  %-24s %s%s%s\n' "Required action" "$C_GREEN" "None — the requested SDK is already installed" "$C_RESET"
+
+  printf '\n%sOPTIONAL: REINSTALL THIS VERSION%s\n' "$C_BOLD" "$C_RESET"
+  printf 'Use these steps only when you intentionally need a clean reinstall.\n\n'
+  printf '  %sStep 1 — Uninstall the current SDK%s\n' "$C_BOLD" "$C_RESET"
+  printf '    bash /usr/local/rpp/doc/uninstall.sh\n\n'
+  printf '  %sIMPORTANT:%s Wait until the uninstall command finishes successfully.\n' "$C_YELLOW" "$C_RESET"
+  printf '  Do not start installation while uninstall is still running.\n\n'
+  printf '  %sStep 2 — Run the installer again%s\n' "$C_BOLD" "$C_RESET"
+  printf '    bash install.sh\n\n'
 }
 
 parse_options() {
@@ -285,8 +303,6 @@ inspect_system() {
     status_row "Package manager" "FAILED" "apt-get and dpkg-query are required"
     FAILED_CHECKS=$((FAILED_CHECKS + 1))
   fi
-
-  inspect_installed_sdk
 
   local audit_output=""
   if command -v dpkg >/dev/null; then
@@ -605,17 +621,14 @@ main() {
   info "SDK installation starts only after every readiness check passes."
   info "Run with --check-only for a read-only assessment."
 
-  inspect_system
+  inspect_installed_sdk
 
   if [[ "$INSTALLED_SDK_STATE" == "same" && "$DOWNLOAD_ONLY" -eq 0 ]]; then
-    success "${PRODUCT_NAME} ${SDK_VERSION} is already installed; no installation is needed."
-    printf '\n  To reinstall this SDK, uninstall the installed version first:\n\n'
-    printf '    bash /usr/local/rpp/doc/uninstall.sh\n\n'
-    printf '  After uninstall finishes, run the installer again:\n\n'
-    printf '    bash install.sh\n\n'
+    print_same_version_result
     exit 0
   fi
 
+  inspect_system
   build_dependency_list
   inspect_dependencies
 
