@@ -1,6 +1,4 @@
-downloads/
 *.run
 *.run.tmp
 *.log
-.agents/
-agent.log
+!agent.log

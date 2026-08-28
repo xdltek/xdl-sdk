@@ -42,6 +42,8 @@ stored in Git.
 - Prefers a local package under `downloads/` or `--download-dir` after size and SHA-256
   verification. A valid local package skips `curl`, proxy, and artifact-server checks for
   one-command offline installation.
+- Includes a ready-to-use `downloads/` directory by default. Its local `.gitignore` prevents
+  SDK packages, temporary files, and other local content from being committed accidentally.
 - Verifies the selected installer's published byte size and SHA-256 before execution.
 - Supports `--check-only`, `--yes`, `--download-only`, `--download-dir`, and `--no-color`.
   The current SDK does not support skipping driver installation.

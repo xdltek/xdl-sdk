@@ -86,8 +86,8 @@ bash install.sh --yes
 ### Offline or limited-network installation
 
 Obtain the SDK package matching the host architecture through removable storage, an internal
-file server, or XDL Technical Support. Place it under the repository's `downloads/` directory,
-then run the same single command:
+file server, or XDL Technical Support. The repository already includes an empty `downloads/`
+directory. Place the package there, then run the same single command:
 
 ```text
 xdl-sdk/
@@ -490,7 +490,9 @@ or another build dependency is missing; contact the board vendor or XDL Technica
 
 - SDK packages are downloaded from the configured HTTPS release endpoints.
 - File size and SHA-256 are validated to confirm that the download matches the published artifact; this is not a digital signature.
-- Downloaded `.run` packages remain under `downloads/` or the selected directory and are never committed to Git.
+- The repository includes the `downloads/` directory by default. Its `.gitignore` prevents
+  downloaded `.run` packages, temporary files, and other local content from being committed
+  accidentally. Packages in a customer-selected directory are also outside repository delivery.
 - The installer does not collect or upload host information.
 
 ## Support

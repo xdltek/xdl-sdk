@@ -35,6 +35,8 @@
 - 检查可用磁盘空间、代理配置和 SDK 下载源可达性。
 - 优先使用 `downloads/` 或 `--download-dir` 中大小及 SHA-256 校验通过的本地安装包；
   本地包有效时跳过 `curl`、代理和下载服务器检查，实现一条命令离线安装。
+- 仓库默认提供可直接使用的 `downloads/` 目录，并通过目录内 `.gitignore` 防止 SDK
+  安装包、临时文件和其他本地内容被误提交。
 - 执行安装包前校验发布文件的字节数和 SHA-256。
 - 支持 `--check-only`、`--yes`、`--download-only`、`--download-dir` 和
   `--no-color`。当前 SDK 不支持跳过驱动安装。
