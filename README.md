@@ -80,6 +80,28 @@ bash install.sh
 bash install.sh --yes
 ```
 
+### 已安装版本处理
+
+安装器会在下载新安装包之前读取 `/usr/local/rpp/doc/creation_timestamp.txt`，并按以下
+规则处理已有 SDK：
+
+| 已安装状态 | 安装器行为 |
+| --- | --- |
+| 未安装 | 继续正常预检、下载和安装 |
+| 与目标版本相同 | 提示 SDK 已安装，无需重复安装，并正常退出 |
+| 低于目标版本 | 明确提示升级；经用户确认后完整执行旧版本卸载，确认卸载结束后才下载和安装新版本 |
+| 高于目标版本 | 阻止降级；如确需切换版本，先手动卸载，再重新运行安装器 |
+| 已检测到 SDK 但版本未知 | 阻止安装，避免覆盖不明确的环境；请联系 XDL 技术支持或先手动卸载 |
+
+手动卸载命令：
+
+```bash
+bash /usr/local/rpp/doc/uninstall.sh
+```
+
+> 卸载和安装不会并发执行。升级时，安装器会等待卸载脚本完整结束，并确认旧 SDK
+> 安装记录已清除；任一步失败都会停止，不会启动新版本安装。
+
 ## 安装前会检查什么
 
 安装器将检查以下内容，并在终端逐项标记 `OK`、`MISSING`、`WARNING`、`SKIPPED`
@@ -87,7 +109,7 @@ bash install.sh --yes
 
 | 分类 | 检查内容 |
 | --- | --- |
-| 系统兼容性 | 发行版、CPU 架构、Linux 内核、APT/dpkg、包数据库健康状态、sudo/root 权限 |
+| 系统兼容性 | 发行版、CPU 架构、Linux 内核、已安装 SDK 版本、APT/dpkg、包数据库健康状态、sudo/root 权限 |
 | 基础工具 | `curl`、`ca-certificates`、`coreutils` |
 | 运行依赖库 | `libc6`、`libstdc++6` |
 | 构建依赖 | `dctrl-tools`、`build-essential` |
@@ -177,7 +199,7 @@ ae-smi
 ## 卸载
 
 ```bash
-sudo bash /usr/local/rpp/doc/uninstall.sh
+bash /usr/local/rpp/doc/uninstall.sh
 ```
 
 卸载后检查是否有残留包：
@@ -302,7 +324,7 @@ mps-on 与 mps-off，以免破坏 SDK 依赖关系。
 先执行 SDK 自带卸载脚本：
 
 ```bash
-sudo bash /usr/local/rpp/doc/uninstall.sh
+bash /usr/local/rpp/doc/uninstall.sh
 dpkg -l | grep -Ei "rpp|azurengine|xdl"
 ```
 

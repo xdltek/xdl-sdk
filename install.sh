@@ -12,6 +12,8 @@ readonly ARM_URL="https://github.com/xdltek/xdl-sdk/releases/download/v1.6.7.2/$
 readonly ARM_SHA256="a4ff9d0b9da433870752a964d667139ac1dea5d8f5ba0bfd6951070934ddf724"
 readonly ARM_SIZE="241186978"
 readonly MIN_EXTRA_BYTES=$((512 * 1024 * 1024))
+readonly SDK_RECORD_FILE="${XDL_SDK_RECORD_FILE:-/usr/local/rpp/doc/creation_timestamp.txt}"
+readonly SDK_UNINSTALL_SCRIPT="${XDL_SDK_UNINSTALL_SCRIPT:-/usr/local/rpp/doc/uninstall.sh}"
 
 DOWNLOAD_DIR="${DOWNLOAD_DIR:-$(pwd)/downloads}"
 SELECTED_ARCH=""
@@ -24,6 +26,8 @@ PACKAGE_DB_BROKEN=0
 DISK_SPACE_FAILED=0
 ARTIFACT_BLOCKED=0
 CURL_UNAVAILABLE=0
+INSTALLED_SDK_VERSION=""
+INSTALLED_SDK_STATE="none"
 
 if [[ ! -t 1 || -n "${NO_COLOR:-}" ]]; then
   USE_COLOR=0
@@ -131,6 +135,74 @@ artifact_reachable() {
     --range 0-0 --max-filesize 1048576 --output /dev/null "$SDK_URL" 2>/dev/null
 }
 
+installed_sdk_package_count() {
+  { dpkg-query -W -f='${db:Status-Abbrev} ${binary:Package}\n' 2>/dev/null || true; } |
+    awk '$1 == "ii" && $2 ~ /(rpp|azurengine|xdl)/ {count++} END {print count+0}'
+}
+
+detect_installed_sdk() {
+  local package_count
+  INSTALLED_SDK_VERSION=""
+  INSTALLED_SDK_STATE="none"
+
+  if [[ -r "$SDK_RECORD_FILE" ]]; then
+    INSTALLED_SDK_VERSION="$(awk -F ':[[:space:]]*' '
+      tolower($1) == "version" {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}
+    ' "$SDK_RECORD_FILE")"
+  fi
+
+  if [[ -z "$INSTALLED_SDK_VERSION" ]]; then
+    package_count="$(installed_sdk_package_count)"
+    if [[ -e "$SDK_RECORD_FILE" || -e "$SDK_UNINSTALL_SCRIPT" || "$package_count" -gt 0 ]]; then
+      INSTALLED_SDK_STATE="unknown"
+    fi
+    return
+  fi
+
+  if dpkg --compare-versions "$INSTALLED_SDK_VERSION" eq "$SDK_VERSION"; then
+    INSTALLED_SDK_STATE="same"
+  elif dpkg --compare-versions "$INSTALLED_SDK_VERSION" lt "$SDK_VERSION"; then
+    INSTALLED_SDK_STATE="older"
+  else
+    INSTALLED_SDK_STATE="newer"
+  fi
+}
+
+inspect_installed_sdk() {
+  detect_installed_sdk
+  case "$INSTALLED_SDK_STATE" in
+    none)
+      status_row "Installed SDK" "OK" "none detected"
+      ;;
+    same)
+      status_row "Installed SDK" "OK" "version $INSTALLED_SDK_VERSION is already installed"
+      ;;
+    older)
+      if [[ "$DOWNLOAD_ONLY" -eq 1 ]]; then
+        status_row "Installed SDK" "WARNING" "version $INSTALLED_SDK_VERSION detected; download-only mode will not change it"
+      else
+        status_row "Installed SDK" "WARNING" "version $INSTALLED_SDK_VERSION will be uninstalled before $SDK_VERSION"
+      fi
+      ;;
+    newer)
+      if [[ "$DOWNLOAD_ONLY" -eq 1 ]]; then
+        status_row "Installed SDK" "WARNING" "newer version $INSTALLED_SDK_VERSION detected; download-only mode will not change it"
+      else
+        status_row "Installed SDK" "BLOCKED" "installed $INSTALLED_SDK_VERSION is newer than requested $SDK_VERSION"
+        FAILED_CHECKS=$((FAILED_CHECKS + 1))
+      fi
+      ;;
+    unknown)
+      if [[ "$DOWNLOAD_ONLY" -eq 1 ]]; then
+        status_row "Installed SDK" "WARNING" "installation detected, but its version could not be determined"
+      else
+        status_row "Installed SDK" "BLOCKED" "installation detected, but its version could not be determined"
+        FAILED_CHECKS=$((FAILED_CHECKS + 1))
+      fi
+      ;;
+  esac
+}
+
 parse_options() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -213,6 +285,8 @@ inspect_system() {
     status_row "Package manager" "FAILED" "apt-get and dpkg-query are required"
     FAILED_CHECKS=$((FAILED_CHECKS + 1))
   fi
+
+  inspect_installed_sdk
 
   local audit_output=""
   if command -v dpkg >/dev/null; then
@@ -354,6 +428,18 @@ print_plan() {
   printf '  %-24s %s\n' "Package" "$SDK_FILE"
   printf '  %-24s %s\n' "Download directory" "$DOWNLOAD_DIR"
   printf '  %-24s %s\n' "Driver" "install (required)"
+  case "$INSTALLED_SDK_STATE" in
+    none) printf '  %-24s %s\n' "Existing SDK" "none" ;;
+    same) printf '  %-24s %s\n' "Existing SDK" "$INSTALLED_SDK_VERSION (already installed)" ;;
+    older)
+      printf '  %-24s %s\n' "Existing SDK" "$INSTALLED_SDK_VERSION"
+      if [[ "$DOWNLOAD_ONLY" -eq 0 ]]; then
+        printf '  %-24s %s\n' "Upgrade action" "finish uninstalling $INSTALLED_SDK_VERSION, then install $SDK_VERSION"
+      fi
+      ;;
+    newer) printf '  %-24s %s\n' "Existing SDK" "$INSTALLED_SDK_VERSION (newer than requested)" ;;
+    unknown) printf '  %-24s %s\n' "Existing SDK" "detected; version unknown" ;;
+  esac
   printf '  %-24s %s\n' "Mode" "$operation_mode"
 }
 
@@ -398,6 +484,16 @@ print_remediation() {
     printf '  If your network requires a proxy, configure https_proxy before running the check again.\n'
   fi
 
+  if [[ "$INSTALLED_SDK_STATE" == "newer" ]]; then
+    printf '\n  A newer SDK is installed. To switch versions, uninstall it first:\n\n'
+    printf '    bash /usr/local/rpp/doc/uninstall.sh\n'
+    printf '\n  Wait for uninstall to finish, then run this installer again.\n'
+  elif [[ "$INSTALLED_SDK_STATE" == "unknown" ]]; then
+    printf '\n  An existing SDK installation was detected, but its version is unknown.\n'
+    printf '  Contact XDL Technical Support or uninstall it before continuing:\n\n'
+    printf '    bash /usr/local/rpp/doc/uninstall.sh\n'
+  fi
+
   printf '\n  Re-run the read-only assessment after completing the actions above:\n\n'
   printf '    bash install.sh --check-only\n\n'
 }
@@ -407,6 +503,32 @@ confirm_plan() {
   printf '\n%sAll prerequisite checks passed.%s\n' "$C_GREEN" "$C_RESET"
   read -r -p "Continue with this plan? [y/N] " answer
   [[ "$answer" =~ ^[Yy]$ ]] || fail "installation cancelled by user"
+}
+
+uninstall_older_sdk() {
+  local remaining_packages
+  [[ "$INSTALLED_SDK_STATE" == "older" && "$DOWNLOAD_ONLY" -eq 0 ]] || return 0
+
+  warn "Installed SDK $INSTALLED_SDK_VERSION is older than requested $SDK_VERSION."
+  warn "The old SDK must finish uninstalling before the new SDK installation starts."
+  [[ -f "$SDK_UNINSTALL_SCRIPT" ]] || fail "uninstall script is missing: $SDK_UNINSTALL_SCRIPT"
+
+  if [[ "$ASSUME_YES" -eq 0 ]]; then
+    read -r -p "Uninstall SDK $INSTALLED_SDK_VERSION and continue with $SDK_VERSION? [y/N] " answer
+    [[ "$answer" =~ ^[Yy]$ ]] || fail "upgrade cancelled; the installed SDK was not changed"
+  fi
+
+  section "UNINSTALL" "Removing XDL SDK $INSTALLED_SDK_VERSION"
+  info "Running the SDK uninstall script and waiting for it to finish"
+  run_as_root bash "$SDK_UNINSTALL_SCRIPT" || fail "SDK uninstall failed; the new SDK was not installed"
+  success "SDK $INSTALLED_SDK_VERSION uninstall process completed"
+
+  [[ ! -e "$SDK_RECORD_FILE" ]] || fail "the previous SDK installation record still exists; finish uninstalling it, then run install.sh again"
+  remaining_packages="$(installed_sdk_package_count)"
+  (( remaining_packages == 0 )) || fail "$remaining_packages SDK package(s) remain installed; finish uninstalling them, then run install.sh again"
+  INSTALLED_SDK_VERSION=""
+  INSTALLED_SDK_STATE="none"
+  success "Previous SDK removal verified; starting the new installation workflow"
 }
 
 verify_installer() {
@@ -473,7 +595,7 @@ post_install_guidance() {
   printf '    1. Review packages: dpkg -l | grep -Ei "rpp|azurengine|xdl"\n'
   printf '    2. Reboot the host so the DKMS driver can load automatically.\n'
   printf '    3. After reboot, run: ae-smi\n'
-  printf '    4. Uninstall with: sudo bash /usr/local/rpp/doc/uninstall.sh\n\n'
+  printf '    4. Uninstall with: bash /usr/local/rpp/doc/uninstall.sh\n\n'
 }
 
 main() {
@@ -484,6 +606,12 @@ main() {
   info "Run with --check-only for a read-only assessment."
 
   inspect_system
+
+  if [[ "$INSTALLED_SDK_STATE" == "same" && "$DOWNLOAD_ONLY" -eq 0 ]]; then
+    success "${PRODUCT_NAME} ${SDK_VERSION} is already installed; no installation is needed."
+    exit 0
+  fi
+
   build_dependency_list
   inspect_dependencies
 
@@ -507,6 +635,7 @@ main() {
   fi
 
   confirm_plan
+  uninstall_older_sdk
   download_sdk
   if [[ "$DOWNLOAD_ONLY" -eq 1 ]]; then
     success "Download-only operation completed: $SDK_PATH"
@@ -517,4 +646,6 @@ main() {
   post_install_guidance
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

@@ -83,13 +83,36 @@ For unattended installation:
 bash install.sh --yes
 ```
 
+### Existing SDK version handling
+
+Before downloading a new package, the installer reads
+`/usr/local/rpp/doc/creation_timestamp.txt` and applies these rules:
+
+| Installed state | Installer behavior |
+| --- | --- |
+| Not installed | Continue with the normal preflight, download, and installation |
+| Same as the requested version | Report that the SDK is already installed, skip reinstallation, and exit successfully |
+| Older than the requested version | Announce the upgrade; after confirmation, finish uninstalling the old SDK and verify removal before downloading and installing the new version |
+| Newer than the requested version | Block downgrade; to switch versions, uninstall manually and run the installer again |
+| SDK detected but version unknown | Block installation to avoid overwriting an unknown environment; contact XDL Technical Support or uninstall manually |
+
+Manual uninstall command:
+
+```bash
+bash /usr/local/rpp/doc/uninstall.sh
+```
+
+> Uninstall and installation never run concurrently. During an upgrade, the installer waits
+> for the uninstaller to finish and verifies that the old SDK record is gone. Any failure
+> stops the workflow before the new installation starts.
+
 ## What Is Checked Before Installation
 
 Each item is marked `OK`, `MISSING`, `WARNING`, `SKIPPED`, or `BLOCKED`:
 
 | Category | Checks |
 | --- | --- |
-| System compatibility | Distribution, CPU architecture, Linux kernel, APT/dpkg, package database, sudo/root access |
+| System compatibility | Distribution, CPU architecture, Linux kernel, installed SDK version, APT/dpkg, package database, sudo/root access |
 | Base tooling | `curl`, `ca-certificates`, `coreutils` |
 | Runtime libraries | `libc6`, `libstdc++6` |
 | Build prerequisites | `dctrl-tools`, `build-essential` |
@@ -177,7 +200,7 @@ ae-smi
 ## Uninstall
 
 ```bash
-sudo bash /usr/local/rpp/doc/uninstall.sh
+bash /usr/local/rpp/doc/uninstall.sh
 ```
 
 Check for residual packages:
@@ -294,7 +317,7 @@ install a `.deb` from an unverified source, or install mps-on and mps-off togeth
 Run the SDK uninstaller and inspect the package database:
 
 ```bash
-sudo bash /usr/local/rpp/doc/uninstall.sh
+bash /usr/local/rpp/doc/uninstall.sh
 dpkg -l | grep -Ei "rpp|azurengine|xdl"
 pgrep -af 'rpp_server|rpp'
 ```

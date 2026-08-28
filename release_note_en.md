@@ -8,7 +8,7 @@ stored in Git.
 
 | Version | Release status | Platforms | Architectures | Main differences |
 | --- | --- | --- | --- | --- |
-| 1.6.7.2 | Public download | Ubuntu/Debian | x86_64, aarch64 | Professional customer installer with a read-only readiness assessment, detailed dependency/library report, GitHub Release download, size and SHA-256 verification, guided installation, and post-install guidance. |
+| 1.6.7.2 | Public download | Ubuntu/Debian | x86_64, aarch64 | Professional customer installer with installed-version detection, read-only readiness checks, dependency reporting, guarded upgrades, GitHub Release download, SHA-256 verification, and post-install guidance. |
 
 ## 1.6.7.2
 
@@ -26,6 +26,9 @@ stored in Git.
 - Checks `curl`, `ca-certificates`, `coreutils`, `libc6`, `libstdc++6`, `dctrl-tools`,
   `build-essential`, `dkms`, and matching kernel headers before installation.
 - Stops if the Debian package database contains incomplete or broken packages.
+- Detects an existing SDK before download: skips the same version; synchronously uninstalls
+  and verifies removal of an older version after confirmation; blocks overwrite when the
+  installed version is newer or unknown and prints the manual uninstall procedure.
 - Checks free disk space, proxy configuration, and artifact-server reachability.
 - Verifies the selected installer's published byte size and SHA-256 before execution.
 - Supports `--check-only`, `--yes`, `--download-only`, `--download-dir`, and `--no-color`.
