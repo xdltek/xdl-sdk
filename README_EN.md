@@ -91,7 +91,7 @@ Before downloading a new package, the installer reads
 | Installed state | Installer behavior |
 | --- | --- |
 | Not installed | Continue with the normal preflight, download, and installation |
-| Same as the requested version | Report that the SDK is already installed, skip reinstallation, and exit successfully |
+| Same as the requested version | Report that the SDK is already installed and exit successfully; if reinstallation is needed, print the manual uninstall and installer rerun commands |
 | Older than the requested version | Announce the upgrade; after confirmation, finish uninstalling the old SDK and verify removal before downloading and installing the new version |
 | Newer than the requested version | Block downgrade; to switch versions, uninstall manually and run the installer again |
 | SDK detected but version unknown | Block installation to avoid overwriting an unknown environment; contact XDL Technical Support or uninstall manually |

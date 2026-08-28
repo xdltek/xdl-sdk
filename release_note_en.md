@@ -26,7 +26,8 @@ stored in Git.
 - Checks `curl`, `ca-certificates`, `coreutils`, `libc6`, `libstdc++6`, `dctrl-tools`,
   `build-essential`, `dkms`, and matching kernel headers before installation.
 - Stops if the Debian package database contains incomplete or broken packages.
-- Detects an existing SDK before download: skips the same version; synchronously uninstalls
+- Detects an existing SDK before download: skips the same version and prints optional manual
+  uninstall and reinstall commands; synchronously uninstalls
   and verifies removal of an older version after confirmation; blocks overwrite when the
   installed version is newer or unknown and prints the manual uninstall procedure.
 - Checks free disk space, proxy configuration, and artifact-server reachability.

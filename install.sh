@@ -609,6 +609,10 @@ main() {
 
   if [[ "$INSTALLED_SDK_STATE" == "same" && "$DOWNLOAD_ONLY" -eq 0 ]]; then
     success "${PRODUCT_NAME} ${SDK_VERSION} is already installed; no installation is needed."
+    printf '\n  To reinstall this SDK, uninstall the installed version first:\n\n'
+    printf '    bash /usr/local/rpp/doc/uninstall.sh\n\n'
+    printf '  After uninstall finishes, run the installer again:\n\n'
+    printf '    bash install.sh\n\n'
     exit 0
   fi
 
