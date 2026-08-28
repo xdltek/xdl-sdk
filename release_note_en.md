@@ -32,6 +32,12 @@ stored in Git.
   synchronously uninstalls
   and verifies removal of an older version after confirmation; blocks overwrite when the
   installed version is newer or unknown and prints the manual uninstall procedure.
+- Lists exact SDK package or `rc` configuration remnants left after uninstall. A normal
+  installation cleans and verifies them after confirmation, `--yes` confirms automatically,
+  and `--check-only` prints the exact cleanup command without changing the host.
+- Adds the one-command `bash uninstall.sh` entry point, which runs the bundled SDK uninstaller,
+  cleans remaining packages, and verifies complete removal in sequence. `--yes` supports
+  unattended confirmation.
 - Checks free disk space, proxy configuration, and artifact-server reachability.
 - Verifies the selected installer's published byte size and SHA-256 before execution.
 - Supports `--check-only`, `--yes`, `--download-only`, `--download-dir`, and `--no-color`.

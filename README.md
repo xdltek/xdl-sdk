@@ -96,15 +96,17 @@ bash install.sh --yes
 | 低于目标版本 | 明确提示升级；经用户确认后完整执行旧版本卸载，确认卸载结束后才下载和安装新版本 |
 | 高于目标版本 | 阻止降级；如确需切换版本，先手动卸载，再重新运行安装器 |
 | 已检测到 SDK 但版本未知 | 阻止安装，避免覆盖不明确的环境；请联系 XDL 技术支持或先手动卸载 |
+| 卸载后仍有 SDK 软件包或 `rc` 配置残留 | 显示具体包名；正常安装经确认后自动清理并验证，`--yes` 自动确认，`--check-only` 只显示精确清理命令而不修改系统 |
 
-手动卸载命令：
+统一卸载命令：
 
 ```bash
-bash /usr/local/rpp/doc/uninstall.sh
+bash uninstall.sh
 ```
 
 > 卸载和安装不会并发执行。升级时，安装器会等待卸载脚本完整结束，并确认旧 SDK
-> 安装记录已清除；任一步失败都会停止，不会启动新版本安装。
+> 安装记录已清除；任一步失败都会停止，不会启动新版本安装。统一卸载脚本还会自动
+> 清理并验证 SDK 自带卸载器可能留下的软件包及 `rc` 配置残留。
 
 ## 安装前会检查什么
 
@@ -168,6 +170,8 @@ sudo dpkg --configure -a
 | 无人值守安装 | `bash install.sh --yes` |
 | 指定下载目录 | `bash install.sh --download-dir /data/xdl-sdk` |
 | 关闭终端颜色 | `bash install.sh --no-color` |
+| 完整卸载并清理残留 | `bash uninstall.sh` |
+| 无人值守卸载 | `bash uninstall.sh --yes` |
 
 查看完整帮助：
 
@@ -204,13 +208,14 @@ ae-smi
 ## 卸载
 
 ```bash
-bash /usr/local/rpp/doc/uninstall.sh
+bash uninstall.sh
 ```
 
-卸载后检查是否有残留包：
+该命令会执行 SDK 自带卸载器、等待其结束、清理检测到的软件包及 `rc` 配置残留，
+最后验证卸载结果。无人值守卸载：
 
 ```bash
-dpkg -l | grep -Ei "rpp|azurengine|xdl"
+bash uninstall.sh --yes
 ```
 
 ## FAQ 与异常处理
@@ -326,20 +331,22 @@ mps-on 与 mps-off，以免破坏 SDK 依赖关系。
 <details>
 <summary><strong>卸载后仍有 rpp-dkms 或 rc 状态怎么办？</strong></summary>
 
-先执行 SDK 自带卸载脚本：
+安装器会识别名称以 `azurengine-`、`xdl-` 或 `rpp-` 开头的 SDK 软件包残留，并打印
+具体包名。正常执行安装时，确认一次即可由安装器自动清理并继续；使用 `--yes` 时自动
+确认。只读检查不会清理系统：
 
 ```bash
-bash /usr/local/rpp/doc/uninstall.sh
-dpkg -l | grep -Ei "rpp|azurengine|xdl"
+bash install.sh --check-only
 ```
 
-确认没有进程占用 RPP：
+如果需要手动排查，可检查包状态和 RPP 进程：
 
 ```bash
+dpkg -l | grep -Ei "rpp|azurengine|xdl"
 pgrep -af 'rpp_server|rpp'
 ```
 
-停止相关业务后，再按实际残留包执行清理。例如：
+停止相关业务后，只清理安装器实际列出的残留包。例如：
 
 ```bash
 sudo apt purge -y \
@@ -349,8 +356,8 @@ sudo apt purge -y \
 sudo dpkg --configure -a
 ```
 
-`rc` 只表示软件主体已删除但配置文件仍在；`ii` 表示包仍然安装。执行 `apt purge`
-前必须核对包名，避免删除仍被其他 XDL 组件使用的依赖。
+`rc` 只表示软件主体已删除但配置文件仍在；`ii` 表示包仍然安装。安装器会等待 APT
+完成并再次验证，确认残留已清除后才开始新 SDK 安装。
 
 </details>
 

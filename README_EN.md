@@ -100,16 +100,18 @@ five-stage workflow starts only when checking, downloading, or installation must
 | Older than the requested version | Announce the upgrade; after confirmation, finish uninstalling the old SDK and verify removal before downloading and installing the new version |
 | Newer than the requested version | Block downgrade; to switch versions, uninstall manually and run the installer again |
 | SDK detected but version unknown | Block installation to avoid overwriting an unknown environment; contact XDL Technical Support or uninstall manually |
+| SDK packages or `rc` configuration remnants remain after uninstall | List the exact packages; a normal installation cleans and verifies them after confirmation, `--yes` confirms automatically, and `--check-only` prints the exact cleanup command without changing the host |
 
-Manual uninstall command:
+Unified uninstall command:
 
 ```bash
-bash /usr/local/rpp/doc/uninstall.sh
+bash uninstall.sh
 ```
 
 > Uninstall and installation never run concurrently. During an upgrade, the installer waits
 > for the uninstaller to finish and verifies that the old SDK record is gone. Any failure
-> stops the workflow before the new installation starts.
+> stops the workflow before the new installation starts. The unified uninstaller also cleans
+> and verifies SDK packages and `rc` configuration remnants left by the bundled uninstaller.
 
 ## What Is Checked Before Installation
 
@@ -172,6 +174,8 @@ sudo dpkg --configure -a
 | Unattended installation | `bash install.sh --yes` |
 | Use another download directory | `bash install.sh --download-dir /data/xdl-sdk` |
 | Disable terminal colors | `bash install.sh --no-color` |
+| Complete uninstall and remnant cleanup | `bash uninstall.sh` |
+| Unattended uninstall | `bash uninstall.sh --yes` |
 
 Show complete help:
 
@@ -206,13 +210,14 @@ ae-smi
 ## Uninstall
 
 ```bash
-bash /usr/local/rpp/doc/uninstall.sh
+bash uninstall.sh
 ```
 
-Check for residual packages:
+This one command runs and waits for the bundled SDK uninstaller, cleans detected SDK packages
+and `rc` configuration remnants, and verifies complete removal. For unattended removal:
 
 ```bash
-dpkg -l | grep -Ei "rpp|azurengine|xdl"
+bash uninstall.sh --yes
 ```
 
 ## FAQ and Troubleshooting
@@ -320,15 +325,22 @@ install a `.deb` from an unverified source, or install mps-on and mps-off togeth
 <details>
 <summary><strong>What if rpp-dkms or an rc state remains after uninstall?</strong></summary>
 
-Run the SDK uninstaller and inspect the package database:
+The installer recognizes remaining SDK packages whose names begin with `azurengine-`, `xdl-`,
+or `rpp-` and prints the exact names. A normal installation can clean them after one
+confirmation; `--yes` confirms automatically. The read-only check never changes the host:
 
 ```bash
-bash /usr/local/rpp/doc/uninstall.sh
+bash install.sh --check-only
+```
+
+For manual investigation, inspect package states and RPP processes:
+
+```bash
 dpkg -l | grep -Ei "rpp|azurengine|xdl"
 pgrep -af 'rpp_server|rpp'
 ```
 
-After stopping related workloads, purge only the packages that actually remain. For example:
+After stopping related workloads, purge only the packages reported by the installer. For example:
 
 ```bash
 sudo apt purge -y \
@@ -339,7 +351,7 @@ sudo dpkg --configure -a
 ```
 
 An `rc` state means only configuration files remain; `ii` means the package is still installed.
-Review package names before purging to avoid removing dependencies used by another XDL component.
+The installer waits for APT and verifies cleanup before starting the new SDK installation.
 
 </details>
 

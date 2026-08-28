@@ -28,6 +28,7 @@ ARTIFACT_BLOCKED=0
 CURL_UNAVAILABLE=0
 INSTALLED_SDK_VERSION=""
 INSTALLED_SDK_STATE="none"
+RESIDUAL_SDK_PACKAGES=()
 
 if [[ ! -t 1 || -n "${NO_COLOR:-}" ]]; then
   USE_COLOR=0
@@ -135,15 +136,22 @@ artifact_reachable() {
     --range 0-0 --max-filesize 1048576 --output /dev/null "$SDK_URL" 2>/dev/null
 }
 
-installed_sdk_package_count() {
+installed_sdk_packages() {
   { dpkg-query -W -f='${db:Status-Abbrev} ${binary:Package}\n' 2>/dev/null || true; } |
-    awk '$1 == "ii" && $2 ~ /(rpp|azurengine|xdl)/ {count++} END {print count+0}'
+    awk '
+      ($1 == "ii" || $1 == "rc") {
+        package=$2
+        sub(/:.*/, "", package)
+        if (package ~ /^(azurengine-|xdl-|rpp-)/) print package
+      }
+    ' | sort -u
 }
 
 detect_installed_sdk() {
-  local package_count
   INSTALLED_SDK_VERSION=""
   INSTALLED_SDK_STATE="none"
+  RESIDUAL_SDK_PACKAGES=()
+  mapfile -t RESIDUAL_SDK_PACKAGES < <(installed_sdk_packages)
 
   if [[ -r "$SDK_RECORD_FILE" ]]; then
     INSTALLED_SDK_VERSION="$(awk -F ':[[:space:]]*' '
@@ -152,9 +160,10 @@ detect_installed_sdk() {
   fi
 
   if [[ -z "$INSTALLED_SDK_VERSION" ]]; then
-    package_count="$(installed_sdk_package_count)"
-    if [[ -e "$SDK_RECORD_FILE" || -e "$SDK_UNINSTALL_SCRIPT" || "$package_count" -gt 0 ]]; then
+    if [[ -e "$SDK_RECORD_FILE" || -e "$SDK_UNINSTALL_SCRIPT" ]]; then
       INSTALLED_SDK_STATE="unknown"
+    elif (( ${#RESIDUAL_SDK_PACKAGES[@]} > 0 )); then
+      INSTALLED_SDK_STATE="residual"
     fi
     return
   fi
@@ -202,7 +211,38 @@ inspect_installed_sdk() {
         FAILED_CHECKS=$((FAILED_CHECKS + 1))
       fi
       ;;
+    residual)
+      if [[ "$DOWNLOAD_ONLY" -eq 1 ]]; then
+        status_row "Previous SDK remnants" "WARNING" "${#RESIDUAL_SDK_PACKAGES[@]} package(s) detected; download-only mode will not change them"
+      elif [[ "$CHECK_ONLY" -eq 1 ]]; then
+        status_row "Previous SDK remnants" "BLOCKED" "${#RESIDUAL_SDK_PACKAGES[@]} package(s) must be cleaned before installation"
+        FAILED_CHECKS=$((FAILED_CHECKS + 1))
+      else
+        status_row "Previous SDK remnants" "WARNING" "${#RESIDUAL_SDK_PACKAGES[@]} package(s) will be cleaned before installation"
+      fi
+      printf '      Detected package(s): %s\n' "${RESIDUAL_SDK_PACKAGES[*]}"
+      ;;
   esac
+}
+
+cleanup_residual_sdk_packages() {
+  local approval_already_given="${1:-0}"
+  [[ "$INSTALLED_SDK_STATE" == "residual" && "$DOWNLOAD_ONLY" -eq 0 && "$CHECK_ONLY" -eq 0 ]] || return 0
+
+  section "CLEANUP" "Removing remnants from the previous SDK"
+  printf '  The following package(s) must be removed before a clean installation:\n'
+  printf '    - %s\n' "${RESIDUAL_SDK_PACKAGES[@]}"
+
+  if [[ "$ASSUME_YES" -eq 0 && "$approval_already_given" -eq 0 ]]; then
+    read -r -p "Clean these previous SDK remnants and continue? [y/N] " answer
+    [[ "$answer" =~ ^[Yy]$ ]] || fail "cleanup was not approved; the system was not changed"
+  fi
+
+  info "Cleaning previous SDK packages and waiting for APT to finish"
+  run_as_root apt-get purge -y "${RESIDUAL_SDK_PACKAGES[@]}"
+  detect_installed_sdk
+  [[ "$INSTALLED_SDK_STATE" == "none" ]] || fail "previous SDK remnants are still present; review the package-manager output before retrying"
+  success "Previous SDK remnants were removed successfully"
 }
 
 print_same_version_result() {
@@ -214,7 +254,7 @@ print_same_version_result() {
   printf '\n%sOPTIONAL: REINSTALL THIS VERSION%s\n' "$C_BOLD" "$C_RESET"
   printf 'Use these steps only when you intentionally need a clean reinstall.\n\n'
   printf '  %sStep 1 — Uninstall the current SDK%s\n' "$C_BOLD" "$C_RESET"
-  printf '    bash /usr/local/rpp/doc/uninstall.sh\n\n'
+  printf '    bash uninstall.sh\n\n'
   printf '  %sIMPORTANT:%s Wait until the uninstall command finishes successfully.\n' "$C_YELLOW" "$C_RESET"
   printf '  Do not start installation while uninstall is still running.\n\n'
   printf '  %sStep 2 — Run the installer again%s\n' "$C_BOLD" "$C_RESET"
@@ -455,6 +495,7 @@ print_plan() {
       ;;
     newer) printf '  %-24s %s\n' "Existing SDK" "$INSTALLED_SDK_VERSION (newer than requested)" ;;
     unknown) printf '  %-24s %s\n' "Existing SDK" "detected; version unknown" ;;
+    residual) printf '  %-24s %s\n' "Existing SDK" "previous package remnants detected" ;;
   esac
   printf '  %-24s %s\n' "Mode" "$operation_mode"
 }
@@ -502,12 +543,16 @@ print_remediation() {
 
   if [[ "$INSTALLED_SDK_STATE" == "newer" ]]; then
     printf '\n  A newer SDK is installed. To switch versions, uninstall it first:\n\n'
-    printf '    bash /usr/local/rpp/doc/uninstall.sh\n'
+    printf '    bash uninstall.sh\n'
     printf '\n  Wait for uninstall to finish, then run this installer again.\n'
   elif [[ "$INSTALLED_SDK_STATE" == "unknown" ]]; then
     printf '\n  An existing SDK installation was detected, but its version is unknown.\n'
     printf '  Contact XDL Technical Support or uninstall it before continuing:\n\n'
-    printf '    bash /usr/local/rpp/doc/uninstall.sh\n'
+    printf '    bash uninstall.sh\n'
+  elif [[ "$INSTALLED_SDK_STATE" == "residual" ]]; then
+    printf '\n  Clean all detected remnants with one command:\n\n'
+    printf '    bash uninstall.sh\n'
+    printf '\n  A normal installation can also perform this cleanup after confirmation.\n'
   fi
 
   printf '\n  Re-run the read-only assessment after completing the actions above:\n\n'
@@ -522,7 +567,6 @@ confirm_plan() {
 }
 
 uninstall_older_sdk() {
-  local remaining_packages
   [[ "$INSTALLED_SDK_STATE" == "older" && "$DOWNLOAD_ONLY" -eq 0 ]] || return 0
 
   warn "Installed SDK $INSTALLED_SDK_VERSION is older than requested $SDK_VERSION."
@@ -540,10 +584,12 @@ uninstall_older_sdk() {
   success "SDK $INSTALLED_SDK_VERSION uninstall process completed"
 
   [[ ! -e "$SDK_RECORD_FILE" ]] || fail "the previous SDK installation record still exists; finish uninstalling it, then run install.sh again"
-  remaining_packages="$(installed_sdk_package_count)"
-  (( remaining_packages == 0 )) || fail "$remaining_packages SDK package(s) remain installed; finish uninstalling them, then run install.sh again"
-  INSTALLED_SDK_VERSION=""
-  INSTALLED_SDK_STATE="none"
+  detect_installed_sdk
+  if [[ "$INSTALLED_SDK_STATE" == "residual" ]]; then
+    warn "The SDK uninstaller left package remnants; completing cleanup before installation"
+    cleanup_residual_sdk_packages 1
+  fi
+  [[ "$INSTALLED_SDK_STATE" == "none" ]] || fail "the previous SDK was not fully removed; the new SDK was not installed"
   success "Previous SDK removal verified; starting the new installation workflow"
 }
 
@@ -611,7 +657,7 @@ post_install_guidance() {
   printf '    1. Review packages: dpkg -l | grep -Ei "rpp|azurengine|xdl"\n'
   printf '    2. Reboot the host so the DKMS driver can load automatically.\n'
   printf '    3. After reboot, run: ae-smi\n'
-  printf '    4. Uninstall with: bash /usr/local/rpp/doc/uninstall.sh\n\n'
+  printf '    4. Uninstall with: bash uninstall.sh\n\n'
 }
 
 main() {
@@ -638,6 +684,7 @@ main() {
   fi
 
   install_missing_dependencies
+  cleanup_residual_sdk_packages
   inspect_download_readiness
   print_plan
 
