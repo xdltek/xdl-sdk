@@ -80,6 +80,32 @@ bash install.sh
 bash install.sh --yes
 ```
 
+### 无网络或弱网络安装
+
+客户可以通过移动存储、内网文件服务器或 XDL 技术支持预先获取与主机架构匹配的
+SDK 安装包。将安装包放入仓库的 `downloads/` 目录，然后仍然只需运行一条命令：
+
+```text
+xdl-sdk/
+├── install.sh
+└── downloads/
+    └── xdl_sdk_1.6.7.2_x86_64_debian.run
+```
+
+```bash
+bash install.sh
+```
+
+aarch64 主机对应文件名为 `xdl_sdk_1.6.7.2_aarch64_debian.run`。安装器会优先检查
+本地文件的大小和 SHA-256；校验通过后直接安装，不要求 `curl`，也不检查代理或
+GitHub 下载地址。文件缺失或校验失败时，才会切换到在线下载。
+
+安装包位于其他目录时，无需复制到仓库，可直接指定所在目录：
+
+```bash
+bash install.sh --download-dir /data/xdl-sdk
+```
+
 ### 已安装版本处理
 
 安装器会在下载新安装包之前读取 `/usr/local/rpp/doc/creation_timestamp.txt`，并按以下
@@ -117,11 +143,11 @@ bash uninstall.sh
 | --- | --- |
 | 已安装版本预检 | 在五阶段流程前识别当前 SDK 版本，并决定直接结束、升级或阻止覆盖 |
 | 系统兼容性 | 发行版、CPU 架构、Linux 内核、APT/dpkg、包数据库健康状态、sudo/root 权限 |
-| 基础工具 | `curl`、`ca-certificates`、`coreutils` |
+| 基础工具 | `coreutils`；仅在线下载时需要 `curl` 和 `ca-certificates` |
 | 运行依赖库 | `libc6`、`libstdc++6` |
 | 构建依赖 | `dctrl-tools`、`build-essential` |
 | 驱动依赖 | `dkms`、当前运行内核对应的 `linux-headers-$(uname -r)` |
-| 交付条件 | 可用磁盘空间、HTTPS 代理、SDK 下载源、包大小和 SHA-256 元数据 |
+| 交付条件 | 优先校验本地安装包；仅无有效本地包时检查 HTTPS 代理和 SDK 下载源 |
 
 示例：
 
@@ -134,16 +160,18 @@ bash uninstall.sh
   dkms                                       OK         RPP kernel module management
   linux-headers-5.15.0-139-generic           OK         headers for the running kernel
 
-[3/5] Download and storage readiness
+[3/5] SDK package source and storage readiness
+  Local SDK package                       OK         /path/to/downloads/xdl_sdk_1.6.7.2_x86_64_debian.run
+  Package integrity                       OK         file size and SHA-256 verified
+  Network access                          SKIPPED    not required for local installation
   Free disk space                            OK         54.3 GiB available
-  Artifact server                            OK         selected package is reachable
   Integrity metadata                         OK         SHA-256 is published for this SDK package
 ```
 
 出现 `MISSING` 或 `BLOCKED` 时，SDK 安装不会开始。包数据库损坏时请先执行：
 
 `--check-only` 会在报告末尾根据当前主机的实际缺失项生成可直接复制的修复命令。
-例如缺少 `curl`、`dctrl-tools`、`build-essential` 和 `dkms` 时会显示：
+在线下载且缺少 `curl`、`dctrl-tools`、`build-essential` 和 `dkms` 时会显示：
 
 ```bash
 sudo apt update
@@ -372,7 +400,12 @@ bash install.sh --check-only
 ```
 
 HTTP `403` 表示服务器或 CDN 拒绝请求，需要检查链接权限、来源策略或网络出口；
-反复重试通常无法解决。
+反复重试通常无法解决。也可以将对应架构的安装包放入 `downloads/`，由安装器完成
+大小和 SHA-256 校验后离线安装：
+
+```bash
+bash install.sh
+```
 
 </details>
 

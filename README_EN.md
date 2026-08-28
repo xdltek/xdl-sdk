@@ -83,6 +83,34 @@ For unattended installation:
 bash install.sh --yes
 ```
 
+### Offline or limited-network installation
+
+Obtain the SDK package matching the host architecture through removable storage, an internal
+file server, or XDL Technical Support. Place it under the repository's `downloads/` directory,
+then run the same single command:
+
+```text
+xdl-sdk/
+├── install.sh
+└── downloads/
+    └── xdl_sdk_1.6.7.2_x86_64_debian.run
+```
+
+```bash
+bash install.sh
+```
+
+For an aarch64 host, use `xdl_sdk_1.6.7.2_aarch64_debian.run`. The installer checks the local
+file size and SHA-256 first. A verified local package requires neither `curl` nor proxy or
+GitHub access. Online download is used only when the local package is absent or invalid.
+
+If the package is already in another directory, point the installer to that directory without
+copying it into the repository:
+
+```bash
+bash install.sh --download-dir /data/xdl-sdk
+```
+
 ### Existing SDK version handling
 
 Before downloading a new package, the installer reads
@@ -121,11 +149,11 @@ Each item is marked `OK`, `MISSING`, `WARNING`, `SKIPPED`, or `BLOCKED`:
 | --- | --- |
 | Installed-version precheck | Identify the current SDK before the five-stage workflow and decide whether to finish, upgrade, or block overwrite |
 | System compatibility | Distribution, CPU architecture, Linux kernel, APT/dpkg, package database, sudo/root access |
-| Base tooling | `curl`, `ca-certificates`, `coreutils` |
+| Base tooling | `coreutils`; `curl` and `ca-certificates` are required only for online download |
 | Runtime libraries | `libc6`, `libstdc++6` |
 | Build prerequisites | `dctrl-tools`, `build-essential` |
 | Driver prerequisites | `dkms`, `linux-headers-$(uname -r)` for the running kernel |
-| Delivery readiness | Free disk space, HTTPS proxy, artifact server, file size, and SHA-256 metadata |
+| Delivery readiness | Verify a local package first; check HTTPS proxy and artifact server only when no valid local package exists |
 
 Example:
 
@@ -138,16 +166,18 @@ Example:
   dkms                                       OK         RPP kernel module management
   linux-headers-5.15.0-139-generic           OK         headers for the running kernel
 
-[3/5] Download and storage readiness
+[3/5] SDK package source and storage readiness
+  Local SDK package                       OK         /path/to/downloads/xdl_sdk_1.6.7.2_x86_64_debian.run
+  Package integrity                       OK         file size and SHA-256 verified
+  Network access                          SKIPPED    not required for local installation
   Free disk space                            OK         54.3 GiB available
-  Artifact server                            OK         selected package is reachable
   Integrity metadata                         OK         SHA-256 is published for this SDK package
 ```
 
-The SDK installation never starts while a requirement is `MISSING` or `BLOCKED`. Repair a
+The SDK installation never starts while a requirement is `MISSING` or `BLOCKED`.
 `--check-only` prints copy-ready remediation commands based on the packages actually missing
 from the host. For example, when `curl`, `dctrl-tools`, `build-essential`, and `dkms` are
-missing, it displays:
+missing during an online installation, it displays:
 
 ```bash
 sudo apt update
@@ -366,7 +396,13 @@ bash install.sh --check-only
 ```
 
 HTTP `403` means that the server or CDN rejected the request. Check URL permissions, origin
-policy, or the network egress; repeated retries usually do not resolve it.
+policy, or the network egress; repeated retries usually do not resolve it. Alternatively,
+place the package for the selected architecture under `downloads/`; the installer verifies
+its size and SHA-256 and then installs offline:
+
+```bash
+bash install.sh
+```
 
 </details>
 

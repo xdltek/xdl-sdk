@@ -39,6 +39,9 @@ stored in Git.
   cleans remaining packages, and verifies complete removal in sequence. `--yes` supports
   unattended confirmation.
 - Checks free disk space, proxy configuration, and artifact-server reachability.
+- Prefers a local package under `downloads/` or `--download-dir` after size and SHA-256
+  verification. A valid local package skips `curl`, proxy, and artifact-server checks for
+  one-command offline installation.
 - Verifies the selected installer's published byte size and SHA-256 before execution.
 - Supports `--check-only`, `--yes`, `--download-only`, `--download-dir`, and `--no-color`.
   The current SDK does not support skipping driver installation.

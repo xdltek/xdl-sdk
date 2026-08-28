@@ -29,6 +29,7 @@ CURL_UNAVAILABLE=0
 INSTALLED_SDK_VERSION=""
 INSTALLED_SDK_STATE="none"
 RESIDUAL_SDK_PACKAGES=()
+LOCAL_PACKAGE_STATE="missing"
 
 if [[ ! -t 1 || -n "${NO_COLOR:-}" ]]; then
   USE_COLOR=0
@@ -95,7 +96,7 @@ status_row() {
   local item="$1" status="$2" details="$3" color="$C_GREEN"
   case "$status" in
     MISSING|FAILED|BLOCKED) color="$C_RED" ;;
-    WARNING|SKIPPED|WAITING) color="$C_YELLOW" ;;
+    WARNING|SKIPPED|WAITING|NOT\ FOUND) color="$C_YELLOW" ;;
   esac
   printf '  %-42s %s%-10s%s %s\n' "$item" "$color" "$status" "$C_RESET" "$details"
 }
@@ -370,16 +371,18 @@ inspect_system() {
 }
 
 build_dependency_list() {
-  DEP_NAMES=(curl ca-certificates coreutils libc6 libstdc++6 dctrl-tools build-essential)
+  DEP_NAMES=(coreutils libc6 libstdc++6 dctrl-tools build-essential)
   DEP_PURPOSES=(
-    "secure SDK download"
-    "TLS certificate validation"
     "file size and SHA-256 verification tools"
     "GNU C runtime library"
     "GNU C++ runtime library"
     "Debian package relationship tools"
     "compiler and build toolchain"
   )
+  if [[ "$LOCAL_PACKAGE_STATE" != "verified" ]]; then
+    DEP_NAMES=(curl ca-certificates "${DEP_NAMES[@]}")
+    DEP_PURPOSES=("secure SDK download" "TLS certificate validation" "${DEP_PURPOSES[@]}")
+  fi
   DEP_NAMES+=(dkms "linux-headers-$(uname -r)")
   DEP_PURPOSES+=("RPP kernel module management" "headers for the running kernel")
 }
@@ -429,8 +432,18 @@ install_missing_dependencies() {
 }
 
 inspect_download_readiness() {
-  section "3/5" "Download and storage readiness"
+  section "3/5" "SDK package source and storage readiness"
   printf '  %-42s %-10s %s\n' "CHECK" "STATUS" "DETAILS"
+
+  if [[ "$LOCAL_PACKAGE_STATE" == "verified" ]]; then
+    status_row "Local SDK package" "OK" "$SDK_PATH"
+    status_row "Package integrity" "OK" "file size and SHA-256 verified"
+    status_row "Network access" "SKIPPED" "not required for local installation"
+  elif [[ "$LOCAL_PACKAGE_STATE" == "invalid" ]]; then
+    status_row "Local SDK package" "WARNING" "$SDK_PATH failed integrity verification; online replacement required"
+  else
+    status_row "Local SDK package" "NOT FOUND" "online download required"
+  fi
 
   local available required disk_path
   disk_path="$DOWNLOAD_DIR"
@@ -451,21 +464,23 @@ inspect_download_readiness() {
     FAILED_CHECKS=$((FAILED_CHECKS + 1))
   fi
 
-  if [[ -n "${https_proxy:-${HTTPS_PROXY:-}}" ]]; then
-    status_row "HTTPS proxy" "OK" "configured"
-  else
-    status_row "HTTPS proxy" "SKIPPED" "direct connection"
-  fi
+  if [[ "$LOCAL_PACKAGE_STATE" != "verified" ]]; then
+    if [[ -n "${https_proxy:-${HTTPS_PROXY:-}}" ]]; then
+      status_row "HTTPS proxy" "OK" "configured"
+    else
+      status_row "HTTPS proxy" "SKIPPED" "direct connection"
+    fi
 
-  if ! package_installed curl || ! command -v curl >/dev/null; then
-    status_row "Artifact server" "WAITING" "install curl, then check the SDK URL"
-    CURL_UNAVAILABLE=1
-  elif artifact_reachable; then
-    status_row "Artifact server" "OK" "selected package is reachable"
-  else
-    status_row "Artifact server" "BLOCKED" "SDK URL is not reachable from this network"
-    ARTIFACT_BLOCKED=1
-    FAILED_CHECKS=$((FAILED_CHECKS + 1))
+    if ! package_installed curl || ! command -v curl >/dev/null; then
+      status_row "Artifact server" "WAITING" "install curl, then check the SDK URL"
+      CURL_UNAVAILABLE=1
+    elif artifact_reachable; then
+      status_row "Artifact server" "OK" "selected package is reachable"
+    else
+      status_row "Artifact server" "BLOCKED" "SDK URL is not reachable from this network"
+      ARTIFACT_BLOCKED=1
+      FAILED_CHECKS=$((FAILED_CHECKS + 1))
+    fi
   fi
 
   status_row "Integrity metadata" "OK" "SHA-256 is published for this SDK package"
@@ -482,6 +497,11 @@ print_plan() {
   printf '  %-24s %s\n' "Operating system" "$OS_NAME"
   printf '  %-24s %s\n' "Architecture" "$SELECTED_ARCH"
   printf '  %-24s %s\n' "Package" "$SDK_FILE"
+  if [[ "$LOCAL_PACKAGE_STATE" == "verified" ]]; then
+    printf '  %-24s %s\n' "Package source" "verified local package"
+  else
+    printf '  %-24s %s\n' "Package source" "online download"
+  fi
   printf '  %-24s %s\n' "Download directory" "$DOWNLOAD_DIR"
   printf '  %-24s %s\n' "Driver" "install (required)"
   case "$INSTALLED_SDK_STATE" in
@@ -602,6 +622,18 @@ verify_installer() {
   [[ "$actual_sha256" == "$SDK_SHA256" ]]
 }
 
+inspect_local_package() {
+  SDK_PATH="$DOWNLOAD_DIR/$SDK_FILE"
+  LOCAL_PACKAGE_STATE="missing"
+  if [[ -e "$SDK_PATH" ]]; then
+    if verify_installer "$SDK_PATH"; then
+      LOCAL_PACKAGE_STATE="verified"
+    else
+      LOCAL_PACKAGE_STATE="invalid"
+    fi
+  fi
+}
+
 download_sdk() {
   SDK_PATH="$DOWNLOAD_DIR/$SDK_FILE"
   TEMP_PATH="$SDK_PATH.tmp"
@@ -674,6 +706,7 @@ main() {
     exit 0
   fi
 
+  inspect_local_package
   inspect_system
   build_dependency_list
   inspect_dependencies
