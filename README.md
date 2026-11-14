@@ -5,260 +5,272 @@
 <h1 align="center">XDL SDK</h1>
 
 <p align="center">
-  面向 XDL 加速平台的一站式 SDK 安装入口<br>
-  <strong>环境预检 · 架构适配 · 安全下载 · 完整性校验 · 安装指引</strong>
+  One installation entry point for the XDL acceleration platform<br>
+  <strong>Readiness check · Architecture selection · Secure download · Integrity verification · Guided installation</strong>
 </p>
 
 <p align="center">
-  <a href="#三步完成安装">快速安装</a> ·
-  <a href="#支持范围">支持范围</a> ·
-  <a href="#安装前会检查什么">安装预检</a> ·
-  <a href="release_note.md">版本说明</a> ·
-  <a href="README_EN.md">English</a>
+  <a href="#install-in-three-steps">Quick start</a> ·
+  <a href="#support-scope">Support scope</a> ·
+  <a href="#what-is-checked-before-installation">Preflight</a> ·
+  <a href="release_note_en.md">Release notes</a> ·
+  <a href="README_CN.md">中文</a>
 </p>
 
 ---
 
-## 产品简介
+## Overview
 
-XDL SDK Installer 是 XDL SDK 的官方命令行交付入口。仓库不保存大型 SDK
-安装包，而是根据客户主机架构选择正式发布包，在安装前完成系统与依赖检查，下载后
-执行文件大小和 SHA-256 完整性校验，全部通过后才启动 SDK 安装。
+XDL SDK Installer is the official command-line delivery entry point for the XDL SDK.
+This repository does not store large SDK packages. It selects the published package for the
+customer host, checks system readiness and dependencies, and verifies the downloaded file's
+size and SHA-256 before starting the SDK installer.
 
-| 客户价值 | 说明 |
+| Customer benefit | Description |
 | --- | --- |
-| 安装前可见 | 用清晰的状态表展示操作系统、内核、依赖库、构建工具、驱动依赖和网络状态 |
-| 风险前置 | 包管理器损坏、依赖缺失、架构不匹配、磁盘不足或下载源不可用时立即停止 |
-| 平台适配 | 自动识别 x86_64 / aarch64，也允许显式选择下载架构 |
-| 交付可信 | 下载使用 HTTPS，并按发布元数据校验文件大小和 SHA-256 |
-| 运维友好 | 支持只检查、只下载、无人值守安装和自定义下载目录 |
+| Visible readiness | A clear status table covers the OS, kernel, libraries, build tools, driver prerequisites, and network |
+| Fail-safe workflow | Auto-fixable tools include repair guidance; safety issues such as a broken package database, architecture mismatch, or insufficient storage stop installation |
+| Platform-aware delivery | Detects x86_64/aarch64 automatically and supports explicit package selection |
+| Delivery integrity | Uses HTTPS and validates the published file size and SHA-256 |
+| Operations-friendly | Supports check-only, download-only, unattended, and custom-directory modes |
 
-> **当前版本：** `1.6.7.2`　|　[查看版本差异与已知限制](release_note.md)
+> **Current version:** `1.6.11`　|　[View changes and known limitations](release_note_en.md)
 
-## 支持范围
+## Support Scope
 
-| 项目 | 支持范围 |
+| Item | Scope |
 | --- | --- |
-| 操作系统家族 | Ubuntu、Debian（APT / dpkg） |
-| CPU 架构 | x86_64、aarch64 |
-| SDK 安装包 | Debian `.run` 安装包 |
-| 驱动方式 | DKMS；当前版本必须安装驱动 |
-| 已有现场记录 | Ubuntu 20.04.6 LTS / x86_64；重启后 `ae-smi` 已识别 RPP_R9 设备 |
+| Operating-system family | Ubuntu and Debian using APT/dpkg |
+| CPU architectures | x86_64 and aarch64 |
+| SDK format | Debian `.run` installer |
+| Driver integration | DKMS; driver installation is required by the current release |
+| Existing field record | Ubuntu 20.04.6 LTS on x86_64; `ae-smi` detected an RPP_R9 device after reboot |
 
-> 不同发行版版本、内核和 ARM 主机仍应在正式部署前执行 `--check-only`，并按贵司
-> 变更流程完成验证。脚本通过不代表特定硬件型号或业务负载已经认证。
+> Run `--check-only` before deployment on every distribution release, kernel, and ARM host.
+> A successful script check does not certify a particular accelerator model or workload.
 
-## 三步完成安装
+## Install in Three Steps
 
-### 1. 获取安装工具
+### 1. Get the installer
 
 ```bash
 git clone https://github.com/xdltek/xdl-sdk.git
 cd xdl-sdk
 ```
 
-### 2. 只做环境检查（推荐）
+### 2. Run a read-only readiness check (recommended)
 
 ```bash
 bash install.sh --check-only
 ```
 
-该命令只输出完整的安装就绪报告，不安装依赖、不下载 SDK、也不修改系统。
+This command prints the complete readiness report without installing packages, downloading
+the SDK, or modifying the host.
 
-### 3. 下载并安装
+### 3. Download and install
 
 ```bash
 bash install.sh
 ```
 
-脚本会先展示预检结果和安装计划；缺少依赖时会询问是否通过 APT 安装。所有条件
-满足后，需要客户再次确认才会下载和安装 SDK。
+The installer prints the preflight results and installation plan first. If dependencies are
+missing, it asks before using APT. It requests final confirmation only after every requirement
+has passed.
 
-无人值守安装：
+During installation, colored separators identify five stages: preparing files, checking system
+components, installing SDK components, installing the device driver, and finalizing the system.
+The complete original output is saved as `downloads/install-*.log` for support. A successful
+installation ends with prominent restart and device-verification instructions.
+
+For unattended installation:
 
 ```bash
 bash install.sh --yes
 ```
 
-### 无网络或弱网络安装
+### Offline or limited-network installation
 
-客户可以通过移动存储、内网文件服务器或 XDL 技术支持预先获取与主机架构匹配的
-SDK 安装包。仓库已经包含空的 `downloads/` 目录；将安装包放入其中，然后仍然只需
-运行一条命令：
+Obtain the SDK package matching the host architecture through removable storage, an internal
+file server, or XDL Technical Support. The repository already includes an empty `downloads/`
+directory. Place the package there, then run the same single command:
 
 ```text
 xdl-sdk/
 ├── install.sh
 └── downloads/
-    └── xdl_sdk_1.6.7.2_x86_64_debian.run
+    └── xdl_sdk_1.6.11.3_x86_64_debian.run
 ```
 
 ```bash
 bash install.sh
 ```
 
-aarch64 主机对应文件名为 `xdl_sdk_1.6.7.2_aarch64_debian.run`。安装器会优先检查
-本地文件的大小和 SHA-256；校验通过后直接安装，不要求 `curl`，也不检查代理或
-GitHub 下载地址。文件缺失或校验失败时，才会切换到在线下载。
+The validated x86_64 delivery keeps package version `1.6.11.3`; for an aarch64 host, use
+`xdl_sdk_1.6.11.4_aarch64_debian.run`. The installer checks the local
+file size and SHA-256 first. A verified local package requires neither `curl` nor proxy or
+GitHub access. Online download is used only when the local package is absent or invalid.
 
-安装包位于其他目录时，无需复制到仓库，可直接指定所在目录：
+If the package is already in another directory, point the installer to that directory without
+copying it into the repository:
 
 ```bash
 bash install.sh --download-dir /data/xdl-sdk
 ```
 
-### 已安装版本处理
+### Existing SDK version handling
 
-安装器会在下载新安装包之前读取 `/usr/local/rpp/doc/creation_timestamp.txt`，并按以下
-规则处理已有 SDK：
+Before downloading a new package, the installer reads
+`/usr/local/rpp/doc/creation_timestamp.txt` and applies these rules:
 
-该检查以独立的 `[PRECHECK] 已安装 SDK 状态` 显示，不属于后续五阶段安装流程。
-如果目标版本已经安装，安装器会直接显示 `[RESULT]` 结论并结束，因此不会再显示
-`[1/5]` 至 `[5/5]`；只有需要继续检查、下载或安装时，才会进入完整五阶段流程。
+This appears as a separate `[PRECHECK] Installed SDK status` section and is not one of the
+five installation stages. If the requested version is already installed, the installer
+shows a final `[RESULT]` and exits, so stages `[1/5]` through `[5/5]` do not appear. The
+five-stage workflow starts only when checking, downloading, or installation must continue.
 
-| 已安装状态 | 安装器行为 |
+| Installed state | Installer behavior |
 | --- | --- |
-| 未安装 | 继续正常预检、下载和安装 |
-| 与目标版本相同 | 明确显示“无需操作”并正常退出；如需重新安装，会以可选的两步操作显示卸载命令、等待卸载完成的警告及重新运行命令 |
-| 低于目标版本 | 明确提示升级；经用户确认后完整执行旧版本卸载，确认卸载结束后才下载和安装新版本 |
-| 高于目标版本 | 阻止降级；如确需切换版本，先手动卸载，再重新运行安装器 |
-| 已检测到 SDK 但版本未知 | 阻止安装，避免覆盖不明确的环境；请联系 XDL 技术支持或先手动卸载 |
-| 卸载后仍有 SDK 软件包或 `rc` 配置残留 | 显示具体包名；正常安装经确认后自动清理并验证，`--yes` 自动确认，`--check-only` 只显示精确清理命令而不修改系统 |
+| Not installed | Continue with the normal preflight, download, and installation |
+| Same as the requested version | Clearly report that no action is required and exit successfully; an optional two-step reinstall path emphasizes the uninstall command, the requirement to wait for completion, and the installer rerun command |
+| Older than the requested version | Announce the upgrade; after confirmation, finish uninstalling the old SDK and verify removal before downloading and installing the new version |
+| Newer than the requested version | Block downgrade; to switch versions, uninstall manually and run the installer again |
+| SDK detected but version unknown | Block installation to avoid overwriting an unknown environment; contact XDL Technical Support or uninstall manually |
+| SDK packages or `rc` configuration remnants remain after uninstall | List the exact packages; a normal installation cleans and verifies them after confirmation, `--yes` confirms automatically, and `--check-only` prints the exact cleanup command without changing the host |
 
-统一卸载命令：
+Unified uninstall command:
 
 ```bash
 bash uninstall.sh
 ```
 
-> 卸载和安装不会并发执行。升级时，安装器会等待卸载脚本完整结束，并确认旧 SDK
-> 安装记录已清除；任一步失败都会停止，不会启动新版本安装。统一卸载脚本还会自动
-> 清理并验证 SDK 自带卸载器可能留下的软件包及 `rc` 配置残留。
+> Uninstall and installation never run concurrently. During an upgrade, the installer waits
+> for the uninstaller to finish and verifies that the old SDK record is gone. Any failure
+> stops the workflow before the new installation starts. The unified uninstaller also cleans
+> and verifies SDK packages and `rc` configuration remnants left by the bundled uninstaller.
 
-## 安装前会检查什么
+## What Is Checked Before Installation
 
-安装器将检查以下内容，并在终端逐项标记 `OK`、`MISSING`、`WARNING`、`SKIPPED`
-或 `BLOCKED`：
+Each item is marked `OK`, `MISSING`, `WARNING`, `SKIPPED`, or `BLOCKED`:
 
-| 分类 | 检查内容 |
+| Category | Checks |
 | --- | --- |
-| 已安装版本预检 | 在五阶段流程前识别当前 SDK 版本，并决定直接结束、升级或阻止覆盖 |
-| 系统兼容性 | 发行版、CPU 架构、Linux 内核、APT/dpkg、包数据库健康状态、sudo/root 权限 |
-| 基础工具 | `coreutils`；仅在线下载时需要 `curl` 和 `ca-certificates` |
-| 运行依赖库 | `libc6`、`libstdc++6` |
-| 构建依赖 | `dctrl-tools`、`build-essential` |
-| 驱动依赖 | `dkms`、当前运行内核对应的 `linux-headers-$(uname -r)` |
-| 交付条件 | 优先校验本地安装包；仅无有效本地包时检查 HTTPS 代理和 SDK 下载源 |
+| Installed-version precheck | Identify the current SDK before the five-stage workflow and decide whether to finish, upgrade, or block overwrite |
+| System compatibility | Distribution, CPU architecture, Linux kernel, APT/dpkg, package database, sudo/root access |
+| Base tooling | `coreutils`; `curl` and `ca-certificates` are required only for online download |
+| SDK-owned dependencies | The `.run` installer and Debian packages handle runtime libraries, build tools, DKMS, and kernel headers |
+| Delivery readiness | Verify a local package first; check HTTPS proxy and artifact server only when no valid local package exists |
 
-示例：
+Example:
 
 ```text
-[2/5] Required packages and libraries
-  PACKAGE / LIBRARY                          STATUS     PURPOSE
-  curl                                       OK         secure SDK download
-  libc6                                      OK         GNU C runtime library
-  build-essential                            OK         compiler and build toolchain
-  dkms                                       OK         RPP kernel module management
-  linux-headers-5.15.0-139-generic           OK         headers for the running kernel
+[REQUIREMENTS] Installation requirements
+  Required setup tools                       OK         available
 
-[3/5] SDK package source and storage readiness
-  Local SDK package                       OK         /path/to/downloads/xdl_sdk_1.6.7.2_x86_64_debian.run
-  Package integrity                       OK         file size and SHA-256 verified
-  Network access                          SKIPPED    not required for local installation
+[PACKAGE] SDK installation package
+  Installation package                       OK         xdl_sdk_1.6.11.3_x86_64_debian.run
+  Package security check                     OK         verified and safe to use
   Free disk space                            OK         54.3 GiB available
-  Integrity metadata                         OK         SHA-256 is published for this SDK package
+
+============================================================
+  READY TO INSTALL XDL SDK 1.6.11
+============================================================
+  Next step:
+    bash install.sh
 ```
 
-出现 `MISSING` 或 `BLOCKED` 时，SDK 安装不会开始。包数据库损坏时请先执行：
-
-`--check-only` 会在报告末尾根据当前主机的实际缺失项生成可直接复制的修复命令。
-在线下载且缺少 `curl`、`dctrl-tools`、`build-essential` 和 `dkms` 时会显示：
+Missing dependencies are reported as `WARNING`: `--check-only` completes successfully and prints
+each missing item, its purpose, and a repair command; normal installation offers to install them.
+Only safety-critical `FAILED` or `BLOCKED` conditions prevent SDK installation.
+`--check-only` prints copy-ready remediation commands based on the packages actually missing
+from the host. For example, when `curl` is missing during an online installation, it displays:
 
 ```bash
 sudo apt update
-sudo apt install -y curl dctrl-tools build-essential dkms
+sudo apt install -y curl
 bash install.sh --check-only
 ```
 
-如果是包数据库损坏，则按报告提示执行：
+For a broken Debian package database, follow the report and run:
 
 ```bash
 sudo apt --fix-broken install -y
 sudo dpkg --configure -a
 ```
 
-## 常用安装场景
+## Common Installation Scenarios
 
-| 场景 | 命令 |
+| Scenario | Command |
 | --- | --- |
-| 自动识别架构并安装 | `bash install.sh` |
-| 指定 x86_64 | `bash install.sh --arch x86_64` |
-| 指定 ARM64 | `bash install.sh --arch aarch64` |
-| 只检查、不修改系统 | `bash install.sh --check-only` |
-| 只下载并校验 | `bash install.sh --download-only` |
-| 无人值守安装 | `bash install.sh --yes` |
-| 指定下载目录 | `bash install.sh --download-dir /data/xdl-sdk` |
-| 关闭终端颜色 | `bash install.sh --no-color` |
-| 完整卸载并清理残留 | `bash uninstall.sh` |
-| 无人值守卸载 | `bash uninstall.sh --yes` |
+| Detect architecture and install | `bash install.sh` |
+| Select x86_64 | `bash install.sh --arch x86_64` |
+| Select ARM64 | `bash install.sh --arch aarch64` |
+| Check without modifying the host | `bash install.sh --check-only` |
+| Download and verify only | `bash install.sh --download-only` |
+| Unattended installation | `bash install.sh --yes` |
+| Use another download directory | `bash install.sh --download-dir /data/xdl-sdk` |
+| Disable terminal colors | `bash install.sh --no-color` |
+| Complete uninstall and remnant cleanup | `bash uninstall.sh` |
+| Unattended uninstall | `bash uninstall.sh --yes` |
 
-查看完整帮助：
+Show complete help:
 
 ```bash
 bash install.sh --help
 ```
 
-## 安装后验证
+## Verify the Installation
 
-### 1. 查看 SDK 版本记录
+Show the SDK build record:
 
 ```bash
 cat /usr/local/rpp/doc/creation_timestamp.txt
 ```
 
-### 2. 检查软件包状态
+Check installed package states:
 
 ```bash
 dpkg -l | grep -Ei "rpp|azurengine|xdl"
 ```
 
-状态列为 `ii` 表示软件包已正确安装；`iU`、`iF` 等状态表示安装或配置未完成。
+An `ii` state means the package is installed correctly. States such as `iU` or `iF` mean
+installation or configuration is incomplete.
 
-### 3. 验证 RPP 设备
-
-完成驱动安装后，建议重启主机，让 DKMS 自动加载与当前内核匹配的模块。重启后执行：
+After installing the driver, reboot so DKMS can load the module for the running kernel.
+Then validate the device (press `q` to exit):
 
 ```bash
 ae-smi
 ```
 
-正常显示设备信息表示驱动与设备已生效；按 `q` 退出。
-
-## 卸载
+## Uninstall
 
 ```bash
 bash uninstall.sh
 ```
 
-该命令会执行 SDK 自带卸载器、等待其结束、清理检测到的软件包及 `rc` 配置残留，
-最后验证卸载结果。无人值守卸载：
+This one command runs and waits for the bundled SDK uninstaller, cleans detected SDK packages
+and `rc` configuration remnants, and verifies complete removal. For unattended removal:
+
+Removal is presented in three colored stages: removing XDL SDK, cleaning remaining components,
+and confirming removal. Complete original output is saved as `downloads/uninstall-*.log`; the
+screen emphasizes customer-relevant progress, warnings, and errors. Success ends with a prominent
+`REMOVAL SUCCESSFUL` result.
 
 ```bash
 bash uninstall.sh --yes
 ```
 
-## FAQ 与异常处理
+## FAQ and Troubleshooting
 
 <details>
-<summary><strong>安装后如何确认 Debian 软件包是否正常？</strong></summary>
+<summary><strong>How do I verify Debian packages after installation?</strong></summary>
 
-本 SDK 使用 Debian 包体系，请使用 `dpkg`，不要使用 `rpm`：
+This SDK uses Debian packages. Use `dpkg`, not `rpm`:
 
 ```bash
 dpkg -l | grep -Ei "rpp|azurengine|xdl"
 ```
 
-正常输出示例（包名会因安装组件和架构不同而变化）：
+Representative output (components and architecture can differ):
 
 ```text
 ii  azurengine-ae-smi                         1-1       amd64  Package created with checkinstall 1.6.3
@@ -275,37 +287,27 @@ ii  azurengine-rpp-tool-chain-rppfft          1-1       amd64  Package created w
 ii  rpp-dkms                                  2.0.16.1  all    Azurengine RPP kernel module
 ```
 
-常见状态：
-
-| 状态 | 含义 | 处理建议 |
+| State | Meaning | Recommended action |
 | --- | --- | --- |
-| `ii` | 已安装并正确配置 | 可以使用 |
-| `iU` | 已解包但未配置 | 执行 `sudo apt --fix-broken install -y` 和 `sudo dpkg --configure -a` |
-| `iF` | 配置失败 | 查看 apt/dpkg 错误并修复依赖 |
-| `rc` | 软件已删除，但配置文件残留 | 如需完全清理，使用 `apt purge` |
+| `ii` | Installed and configured | Ready to use |
+| `iU` | Unpacked but not configured | Run `sudo apt --fix-broken install -y` and `sudo dpkg --configure -a` |
+| `iF` | Configuration failed | Review the apt/dpkg error and repair dependencies |
+| `rc` | Software removed; configuration remains | Use `apt purge` if complete removal is required |
 
-查看单个包的详细状态：
+Inspect one package:
 
 ```bash
 dpkg -s azurengine-rpp-drv-api-mps-on
 ```
 
-其中 `Status: install ok installed` 表示安装正常。
+`Status: install ok installed` means the package is healthy.
 
 </details>
 
 <details>
-<summary><strong>ae-smi 提示 No devices initialized successfully 怎么处理？</strong></summary>
+<summary><strong>ae-smi reports “No devices initialized successfully.” What should I do?</strong></summary>
 
-如果出现：
-
-```text
-Warning: No devices initialized successfully. init false
-Warning: ae-smi init false.
-Warning: No DEV to monitor.
-```
-
-优先重启主机，让 DKMS 自动加载与当前内核匹配的 RPP 模块。重启后执行：
+Reboot first so DKMS can load the RPP module for the running kernel. Then run:
 
 ```bash
 dkms status
@@ -313,69 +315,71 @@ lsmod | grep rpp
 ae-smi
 ```
 
-如果现场不能重启，可进行高级手动处理：
+If the host cannot be rebooted, an experienced administrator can inspect and load the
+module manually:
 
 ```bash
 MODULE_DIR="/lib/modules/$(uname -r)/updates/dkms"
 ls -lh "$MODULE_DIR"/rpp.ko*
 
-# 仅存在 rpp.ko.xz 时解压；不要覆盖已有 rpp.ko
+# Run only when rpp.ko.xz exists and rpp.ko does not already exist.
 sudo xz -dk "$MODULE_DIR/rpp.ko.xz"
-
 sudo insmod "$MODULE_DIR/rpp.ko"
 lsmod | grep rpp
 ```
 
-如果设备节点存在但当前用户无权访问，可临时按现场方案执行：
+For temporary troubleshooting when device nodes exist but access is denied:
 
 ```bash
 sudo chmod 666 /dev/rpp0_entire_ctrl /dev/ve0_entire_ctrl
 ```
 
-`chmod 666` 会授予所有本机用户读写权限，只建议用于受控环境的临时排障。生产环境应
-由管理员通过设备组或 udev 规则配置最小权限。若 `insmod` 报模块签名、版本不匹配或
-符号错误，不要强制加载，应检查 DKMS 构建日志和当前内核版本。
+Mode `666` grants every local user read/write access. Use it only temporarily in a controlled
+environment; production systems should use a device group or udev rule with least privilege.
+Do not force-load a module after signature, kernel-version, or unresolved-symbol errors.
 
 </details>
 
 <details>
-<summary><strong>需要切换 RPP MPS 多线程/单线程配置怎么办？</strong></summary>
+<summary><strong>What if I need to switch the RPP MPS multi-thread/single-thread mode?</strong></summary>
 
-- `azurengine-rpp-drv-api-mps-on`：多线程模式，需要配合 `rpp_server`。
-- `azurengine-rpp-drv-api-mps-off`：单线程模式。
+- `azurengine-rpp-drv-api-mps-on`: multi-thread mode; requires `rpp_server`.
+- `azurengine-rpp-drv-api-mps-off`: single-thread mode.
 
-MPS 配置切换所需的 `.deb` 包**不包含在当前客户交付中**，因此不支持客户自行切换。
-如业务需要变更模式，请联系 XDL 技术支持人员，并提供 SDK 版本、CPU 架构、当前
-`rpp-drv-api` 包状态和使用场景。技术支持将确认兼容性、提供匹配的软件包和操作指导。
+The `.deb` packages required for MPS mode switching are **not included in the current
+customer delivery**, so this is not a customer self-service operation. Contact XDL Technical
+Support and provide the SDK version, CPU architecture, current `rpp-drv-api` package state,
+and intended use case. Support will confirm compatibility, provide the matching package,
+and guide the change.
 
 ```bash
 dpkg -l | grep -Ei "rpp-drv-api"
 ```
 
-在获得 XDL 技术支持确认前，请勿卸载当前包、安装来源不明的 `.deb` 包或同时安装
-mps-on 与 mps-off，以免破坏 SDK 依赖关系。
+Until XDL Technical Support confirms the procedure, do not remove the current package,
+install a `.deb` from an unverified source, or install mps-on and mps-off together.
 
 </details>
 
 <details>
-<summary><strong>卸载后仍有 rpp-dkms 或 rc 状态怎么办？</strong></summary>
+<summary><strong>What if rpp-dkms or an rc state remains after uninstall?</strong></summary>
 
-安装器会识别名称以 `azurengine-`、`xdl-` 或 `rpp-` 开头的 SDK 软件包残留，并打印
-具体包名。正常执行安装时，确认一次即可由安装器自动清理并继续；使用 `--yes` 时自动
-确认。只读检查不会清理系统：
+The installer recognizes remaining SDK packages whose names begin with `azurengine-`, `xdl-`,
+or `rpp-` and prints the exact names. A normal installation can clean them after one
+confirmation; `--yes` confirms automatically. The read-only check never changes the host:
 
 ```bash
 bash install.sh --check-only
 ```
 
-如果需要手动排查，可检查包状态和 RPP 进程：
+For manual investigation, inspect package states and RPP processes:
 
 ```bash
 dpkg -l | grep -Ei "rpp|azurengine|xdl"
 pgrep -af 'rpp_server|rpp'
 ```
 
-停止相关业务后，只清理安装器实际列出的残留包。例如：
+After stopping related workloads, purge only the packages reported by the installer. For example:
 
 ```bash
 sudo apt purge -y \
@@ -385,24 +389,25 @@ sudo apt purge -y \
 sudo dpkg --configure -a
 ```
 
-`rc` 只表示软件主体已删除但配置文件仍在；`ii` 表示包仍然安装。安装器会等待 APT
-完成并再次验证，确认残留已清除后才开始新 SDK 安装。
+An `rc` state means only configuration files remain; `ii` means the package is still installed.
+The installer waits for APT and verifies cleanup before starting the new SDK installation.
 
 </details>
 
 <details>
-<summary><strong>下载源显示 BLOCKED 怎么办？</strong></summary>
+<summary><strong>The artifact server is BLOCKED. What should I check?</strong></summary>
 
-确认目标主机可以访问 HTTPS，检查企业防火墙、白名单和代理设置。如需代理：
+Confirm outbound HTTPS access and review corporate firewall, allowlist, and proxy settings:
 
 ```bash
 export https_proxy=http://proxy.example.com:port
 bash install.sh --check-only
 ```
 
-HTTP `403` 表示服务器或 CDN 拒绝请求，需要检查链接权限、来源策略或网络出口；
-反复重试通常无法解决。也可以将对应架构的安装包放入 `downloads/`，由安装器完成
-大小和 SHA-256 校验后离线安装：
+HTTP `403` means that the server or CDN rejected the request. Check URL permissions, origin
+policy, or the network egress; repeated retries usually do not resolve it. Alternatively,
+place the package for the selected architecture under `downloads/`; the installer verifies
+its size and SHA-256 and then installs offline:
 
 ```bash
 bash install.sh
@@ -411,30 +416,31 @@ bash install.sh
 </details>
 
 <details>
-<summary><strong>找不到当前内核头文件怎么办？</strong></summary>
+<summary><strong>Headers for the running kernel are missing. What should I do?</strong></summary>
 
 ```bash
 sudo apt update
 sudo apt install linux-headers-$(uname -r)
 ```
 
-如果软件源中没有完全匹配的版本，应先确认当前内核来源和软件源配置，不要用其他
-内核版本的 headers 代替。
+If an exact match is unavailable, review the kernel source and configured repositories. Do
+not substitute headers from another kernel version.
 
 </details>
 
 <details>
-<summary><strong>RK3588 编译驱动提示 /lib/modules/5.10.160/build: No such file or directory 怎么办？</strong></summary>
+<summary><strong>RK3588 driver build fails with “/lib/modules/5.10.160/build: No such file or directory.”</strong></summary>
 
-该错误表示当前内核的构建目录或 Header 不存在。先确认实际内核版本和链接状态：
+The build directory or headers for the running kernel are missing. Check the exact kernel
+release and link first:
 
 ```bash
 uname -r
 ls -ld /lib/modules/$(uname -r)/build
 ```
 
-从瑞芯微（Rockchip）或板卡厂商的官方发布渠道获取与以下三项**完全匹配**的 Linux
-Header：当前系统镜像、`uname -r` 输出和 ARM64 架构。以 `5.10.160-31` 包为例：
+Obtain Linux headers from an official Rockchip or board-vendor release that exactly match
+the system image, `uname -r` output, and ARM64 architecture. Example for `5.10.160-31`:
 
 ```bash
 sudo dpkg -i linux-headers-5.10.160_5.10.160-31_arm64.deb
@@ -442,16 +448,17 @@ sudo apt --fix-broken install -y
 ls -ld /lib/modules/$(uname -r)/build
 ```
 
-示例文件名不能用于其他内核。若安装后 `build` 仍不存在，说明 Header 包与当前板卡
-镜像不匹配或包内容不完整，请向板卡厂商或 XDL 技术支持索取对应版本。
+Do not use the example package with another kernel. If `build` is still missing, request
+the matching package from the board vendor or XDL Technical Support.
 
 </details>
 
 <details>
-<summary><strong>RK3588 编译驱动提示 /usr/bin/env: ‘python’: No such file or directory 怎么办？</strong></summary>
+<summary><strong>RK3588 driver build fails with “/usr/bin/env: ‘python’: No such file or directory.”</strong></summary>
 
-部分内核构建脚本调用命令名 `python`，而系统可能只安装了 `python3`。安装明确的构建
-依赖，并由发行版提供 `python` 到 Python 3 的兼容入口：
+Some kernel build scripts invoke `python`, while the host might provide only `python3`.
+Install the explicit build dependencies and the distribution-managed Python 3 compatibility
+command:
 
 ```bash
 sudo apt update
@@ -463,16 +470,16 @@ sudo apt install -y \
 python --version
 ```
 
-不建议仅为此问题执行整机 `apt upgrade`，避免改变已验证的内核和驱动环境。不要从
-非可信来源安装名为 `python` 的包；如果板卡发行版不提供 `python-is-python3`，请联系
-板卡厂商或 XDL 技术支持确认兼容方案。
+Do not perform a full `apt upgrade` only for this error, because that can change the validated
+kernel/driver environment. If the board distribution does not provide `python-is-python3`,
+contact the board vendor or XDL Technical Support for the compatible solution.
 
 </details>
 
 <details>
-<summary><strong>RK3588 编译驱动提示 /bin/bash: scripts/basic/fixdep: No such file or directory 怎么办？</strong></summary>
+<summary><strong>RK3588 driver build fails with “/bin/bash: scripts/basic/fixdep: No such file or directory.”</strong></summary>
 
-进入当前内核的构建目录并生成内核构建辅助脚本：
+Generate the kernel build helper scripts in the running kernel's build directory:
 
 ```bash
 KERNEL_BUILD="/lib/modules/$(uname -r)/build"
@@ -482,23 +489,24 @@ sudo make scripts
 test -x scripts/basic/fixdep && echo "fixdep is ready"
 ```
 
-`make scripts` 后续步骤即使出现错误，也只有在最后一条命令确认 `fixdep is ready` 时，
-才能继续驱动编译。如果 `scripts/basic/fixdep` 未生成，通常表示 Header/内核源码包不完整、
-版本不匹配或仍缺少构建依赖，不要忽略错误，请联系板卡厂商或 XDL 技术支持。
+Even if a later part of `make scripts` reports an error, continue only when the final check
+prints `fixdep is ready`. Otherwise the headers/kernel source are incomplete or mismatched,
+or another build dependency is missing; contact the board vendor or XDL Technical Support.
 
 </details>
 
-## 安全与数据说明
+## Security and Data Handling
 
-- SDK 包通过配置的 HTTPS 发布地址下载。
-- 安装器校验发布文件的字节数和 SHA-256；该校验用于确认下载内容与发布制品一致，不等同于数字签名。
-- 仓库默认包含 `downloads/` 目录；其中的 `.gitignore` 会阻止下载的 `.run`、临时文件
-  和其他本地内容被误提交。客户指定目录中的安装包也不属于本仓库交付内容。
-- 脚本不采集、不上传主机信息。
+- SDK packages are downloaded from the configured HTTPS release endpoints.
+- File size and SHA-256 are validated to confirm that the download matches the published artifact; this is not a digital signature.
+- The repository includes the `downloads/` directory by default. Its `.gitignore` prevents
+  downloaded `.run` packages, temporary files, and other local content from being committed
+  accidentally. Packages in a customer-selected directory are also outside repository delivery.
+- The installer does not collect or upload host information.
 
-## 获取支持
+## Support
 
-提交问题前，请准备以下信息，以便技术支持快速定位：
+Prepare this diagnostic information before requesting assistance:
 
 ```bash
 cat /etc/os-release
@@ -508,8 +516,8 @@ dkms status
 dpkg -l | grep -Ei "rpp|azurengine|xdl"
 ```
 
-请通过本仓库的 Issue 或您的 XDL 技术支持联系人提交问题。请勿在公开 Issue
-中粘贴账号、令牌、内网地址或其他敏感信息。
+Open an issue in this repository or contact your XDL technical representative. Never
+post credentials, tokens, internal addresses, or other sensitive information in a public issue.
 
 ---
 

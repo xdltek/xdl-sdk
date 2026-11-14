@@ -1,77 +1,67 @@
-# XDL SDK Release Notes
+# XDL SDK 1.6.11 Release Notes
 
-This file lists the SDK versions available through this repository and their user-visible
-differences. SDK installer binaries are downloaded from the release server and are not
-stored in Git.
+## Release summary
 
-**Total SDK versions: 1**
+This release targets x86_64 and aarch64 Ubuntu/Debian systems. It improves device-memory reporting, adds GraphIR workflows, and makes installer environment checks easier for customers to resolve.
 
-| Version | Release status | Platforms | Architectures | Main differences |
-| --- | --- | --- | --- | --- |
-| 1.6.7.2 | Public download | Ubuntu/Debian | x86_64, aarch64 | Professional customer installer with installed-version detection, read-only readiness checks, dependency reporting, guarded upgrades, GitHub Release download, SHA-256 verification, and post-install guidance. |
+> **Delivery note:** Release `1.6.11` uses different installer filenames for each architecture. Select the file from the table below by host architecture; do not rename or mix packages.
 
-## 1.6.7.2
+## Packages
 
-### SDK packages
+| Architecture | File | SHA-256 | Validation status |
+| --- | --- | --- | --- |
+| x86_64 | `xdl_sdk_1.6.11.3_x86_64_debian.run` | `6bd451ee91a275d2886bb1cb11788f0d9fd0d5ee79bf10b37b3476e94844d07b` | Installation validated |
+| aarch64 | `xdl_sdk_1.6.11.4_aarch64_debian.run` | `5f8376ef8b439730966f0a405578010ab787ea8f6253fbe2c07dbbff3858d2ab` | File integrity validated; target-board installation pending |
 
-- x86_64: `xdl_sdk_1.6.7.2_x86_64_debian.run`
-- aarch64: `xdl_sdk_1.6.7.2_aarch64_debian.run`
+The installer detects the host architecture and verifies file size and SHA-256 before execution. See [README.md](README.md) for installation instructions.
 
-### Installation behavior
+## New features
 
-- Detects the host architecture or accepts `--arch x86_64|aarch64`.
-- Supports Ubuntu and Debian package-based systems.
-- Prints a separate installed-version precheck before the five-stage workflow. Compatibility,
-  dependencies, download readiness, the installation plan, and package preparation appear
-  only when work must continue.
-- Checks `curl`, `ca-certificates`, `coreutils`, `libc6`, `libstdc++6`, `dctrl-tools`,
-  `build-essential`, `dkms`, and matching kernel headers before installation.
-- Stops if the Debian package database contains incomplete or broken packages.
-- Detects an existing SDK before download: the same version produces a final no-action-required
-  result plus an emphasized optional two-step reinstall path and uninstall-completion warning;
-  synchronously uninstalls
-  and verifies removal of an older version after confirmation; blocks overwrite when the
-  installed version is newer or unknown and prints the manual uninstall procedure.
-- Lists exact SDK package or `rc` configuration remnants left after uninstall. A normal
-  installation cleans and verifies them after confirmation, `--yes` confirms automatically,
-  and `--check-only` prints the exact cleanup command without changing the host.
-- Adds the one-command `bash uninstall.sh` entry point, which runs the bundled SDK uninstaller,
-  cleans remaining packages, and verifies complete removal in sequence. `--yes` supports
-  unattended confirmation.
-- Checks free disk space, proxy configuration, and artifact-server reachability.
-- Prefers a local package under `downloads/` or `--download-dir` after size and SHA-256
-  verification. A valid local package skips `curl`, proxy, and artifact-server checks for
-  one-command offline installation.
-- Includes a ready-to-use `downloads/` directory by default. Its local `.gitignore` prevents
-  SDK packages, temporary files, and other local content from being committed accidentally.
-- Verifies the selected installer's published byte size and SHA-256 before execution.
-- Supports `--check-only`, `--yes`, `--download-only`, `--download-dir`, and `--no-color`.
-  The current SDK does not support skipping driver installation.
-- Prints installation-result checks and clear reboot, device-verification, and uninstall steps.
-- When read-only preflight detects missing packages, it prints copy-ready APT installation
-  and recheck commands. Package-database, disk-space, and network failures also include
-  targeted remediation guidance.
-- Keeps downloaded `.run` packages outside Git under the ignored `downloads/` directory.
+- `ae-smi`: enables the `mem_usage` node in `rpp_syscfg.ini` by default for device-memory queries.
+- GraphIR: supports IR export and replay for a single ONNX model.
+- GraphIR: supports IR replay for YOLOv8m fusion ONNX models.
 
-### Customer documentation
+## Installer improvements
 
-- Reworked the Chinese and English landing pages around customer outcomes, a three-step
-  quick start, support scope, a prerequisite matrix, common deployment scenarios,
-  post-install verification, troubleshooting, security, and support preparation.
-- Clearly separates validated field evidence from compatibility claims that still require
-  target-system validation.
-- Added bilingual FAQ guidance for Debian package states, driver activation, manual module
-  loading, MPS mode requests, uninstall residue, HTTP `403`, and kernel headers. MPS
-  switching packages are not included in customer delivery and must be requested from
-  XDL Technical Support.
-- Added RK3588/ARM driver-build guidance for vendor kernel headers, a missing `python`
-  command, and a missing `scripts/basic/fixdep`. Header packages must match the board image,
-  running kernel, and architecture.
-- Separated Chinese and English release notes so each README stays in one language.
+- Checks only base tools used directly by the wrapper; the `.run` installer handles SDK runtime, build, and driver dependencies.
+- Reports each missing base tool, its purpose, and a copy-ready APT repair command.
+- `--check-only` no longer fails for dependencies that can be installed automatically.
+- Normal installation can install missing dependencies after customer confirmation.
+- Adds five colored installation stages, saves a complete support log, and prominently shows restart and verification steps after success.
+- Adds three colored removal stages and a complete support log while simplifying customer-facing output.
+- Architecture mismatch, a broken package database, insufficient disk space, and invalid package integrity still block installation.
 
-### Validation status and known limitations
+## Delivery scope and limitations
 
-On 2026-08-26, both GitHub Release URLs passed anonymous Range requests, full downloads, and
-SHA-256 verification. Installation and post-reboot validation passed on x86_64: `ae-smi`
-detected an RPP_R9 device in the `WORKING` state. Installation and driver loading on an
-aarch64 target, plus uninstall validation on both architectures, remain outstanding.
+- This release includes CV and GraphIR samples.
+- VE/OpenStream base libraries and samples are not included.
+- YOLOv8m fusion ONNX supports IR replay but does not support IR export.
+- Standalone GraphIR deployment packages and internal test tools are outside the customer SDK scope.
+
+## Orange Pi compatibility
+
+Orange Pi system libraries and driver installation can differ from standard Ubuntu/Debian hosts:
+
+- `rpp_assembler` requires a jsoncpp 1.7 runtime compatible with `libjsoncpp.so.1`. Do not link `libjsoncpp.so.25` to `libjsoncpp.so.1`; their ABIs are incompatible.
+- `libRppRT.so` requires the OpenSSL 1.1 runtime `libcrypto.so.1.1`. Do not link OpenSSL 3 `libcrypto.so.3` to `libcrypto.so.1.1`.
+- If `ae-smi` cannot find `librpp_perf.so.1`, ensure `/usr/local/rpp/lib` is in the dynamic-linker configuration and run `sudo ldconfig`.
+- DKMS driver installation is not currently supported on Orange Pi. Build the driver from source matched to the board image and running kernel.
+- Debian-package deployment on Orange Pi might not create `/usr/local/rpp/doc/creation_timestamp.txt`; do not use that file as the only installation check.
+
+> **Warning:** Obtain compatibility libraries from a trusted source and match the OS release and aarch64 architecture. Never use cross-ABI library symlinks to bypass dependencies. Contact XDL Technical Support for approved compatibility packages and Orange Pi driver instructions.
+
+Use these commands to inspect the relevant dynamic-library dependencies:
+
+```bash
+ldd -r /usr/local/rpp_sim/bin/rpp_assembler
+ldd -r /usr/local/rpp/lib/libRppRT.so
+ldconfig -p | grep -E 'libjsoncpp\.so\.1|libcrypto\.so\.1\.1|librpp_perf\.so\.1'
+```
+
+## Validation status
+
+As of 2026-11-14:
+
+- x86_64 installation completed successfully, including the DKMS module build and SDK packages.
+- The aarch64 package passed file-size and SHA-256 verification.
+- aarch64 target installation and driver loading, plus uninstall flows on both architectures, remain to be validated.

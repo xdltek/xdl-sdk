@@ -2,15 +2,16 @@
 set -Eeuo pipefail
 
 readonly PRODUCT_NAME="XDL SDK"
-readonly SDK_VERSION="1.6.7.2"
-readonly X86_FILE="xdl_sdk_1.6.7.2_x86_64_debian.run"
-readonly X86_URL="https://github.com/xdltek/xdl-sdk/releases/download/v1.6.7.2/${X86_FILE}"
-readonly X86_SHA256="9e520353f391176ea4eb6de8219b11e16339b1b045dd7c7c73245a32d01b2d95"
-readonly X86_SIZE="240863938"
-readonly ARM_FILE="xdl_sdk_1.6.7.2_aarch64_debian.run"
-readonly ARM_URL="https://github.com/xdltek/xdl-sdk/releases/download/v1.6.7.2/${ARM_FILE}"
-readonly ARM_SHA256="a4ff9d0b9da433870752a964d667139ac1dea5d8f5ba0bfd6951070934ddf724"
-readonly ARM_SIZE="241186978"
+readonly SDK_VERSION="1.6.11"
+# The validated x86 delivery package retains its upstream 1.6.11.3 filename/version.
+readonly X86_FILE="xdl_sdk_1.6.11.3_x86_64_debian.run"
+readonly X86_URL="https://github.com/xdltek/xdl-sdk/releases/download/v1.6.11/${X86_FILE}"
+readonly X86_SHA256="6bd451ee91a275d2886bb1cb11788f0d9fd0d5ee79bf10b37b3476e94844d07b"
+readonly X86_SIZE="182504098"
+readonly ARM_FILE="xdl_sdk_1.6.11.4_aarch64_debian.run"
+readonly ARM_URL="https://github.com/xdltek/xdl-sdk/releases/download/v1.6.11/${ARM_FILE}"
+readonly ARM_SHA256="5f8376ef8b439730966f0a405578010ab787ea8f6253fbe2c07dbbff3858d2ab"
+readonly ARM_SIZE="190089217"
 readonly MIN_EXTRA_BYTES=$((512 * 1024 * 1024))
 readonly SDK_RECORD_FILE="${XDL_SDK_RECORD_FILE:-/usr/local/rpp/doc/creation_timestamp.txt}"
 readonly SDK_UNINSTALL_SCRIPT="${XDL_SDK_UNINSTALL_SCRIPT:-/usr/local/rpp/doc/uninstall.sh}"
@@ -22,6 +23,7 @@ CHECK_ONLY=0
 DOWNLOAD_ONLY=0
 USE_COLOR=1
 FAILED_CHECKS=0
+ADVISORY_CHECKS=0
 PACKAGE_DB_BROKEN=0
 DISK_SPACE_FAILED=0
 ARTIFACT_BLOCKED=0
@@ -75,7 +77,7 @@ banner() {
   printf '\n%s' "$C_BLUE"
   printf '%s\n' '============================================================'
   printf '  %s %s\n' "$PRODUCT_NAME" "$SDK_VERSION"
-  printf '  Professional installer for Ubuntu / Debian\n'
+  printf '  Easy setup for Ubuntu / Debian\n'
   printf '%s%s\n\n' '============================================================' "$C_RESET"
 }
 
@@ -86,6 +88,14 @@ section() {
 info() { printf '%sINFO%s  %s\n' "$C_BLUE" "$C_RESET" "$*"; }
 warn() { printf '%sWARN%s  %s\n' "$C_YELLOW" "$C_RESET" "$*"; }
 success() { printf '%sOK%s    %s\n' "$C_GREEN" "$C_RESET" "$*"; }
+
+install_phase() {
+  local number="$1" title="$2" description="$3"
+  printf '\n%s%s%s\n' "$C_BLUE" "$C_BOLD" '------------------------------------------------------------'
+  printf '  STEP %s/5  %s\n' "$number" "$title"
+  printf '%s%s\n' '------------------------------------------------------------' "$C_RESET"
+  printf '  %s\n' "$description"
+}
 
 fail() {
   printf '%sERROR%s %s\n' "$C_RED" "$C_RESET" "$*" >&2
@@ -127,7 +137,7 @@ package_status() {
 }
 
 package_installed() {
-  [[ "$(package_status "$1")" == "ii " ]]
+  package_status "$1" | grep -q '^ii '
 }
 
 artifact_reachable() {
@@ -169,9 +179,9 @@ detect_installed_sdk() {
     return
   fi
 
-  if dpkg --compare-versions "$INSTALLED_SDK_VERSION" eq "$SDK_VERSION"; then
+  if dpkg --compare-versions "$INSTALLED_SDK_VERSION" eq "$SDK_PACKAGE_VERSION"; then
     INSTALLED_SDK_STATE="same"
-  elif dpkg --compare-versions "$INSTALLED_SDK_VERSION" lt "$SDK_VERSION"; then
+  elif dpkg --compare-versions "$INSTALLED_SDK_VERSION" lt "$SDK_PACKAGE_VERSION"; then
     INSTALLED_SDK_STATE="older"
   else
     INSTALLED_SDK_STATE="newer"
@@ -180,7 +190,7 @@ detect_installed_sdk() {
 
 inspect_installed_sdk() {
   detect_installed_sdk
-  section "PRECHECK" "Installed SDK status"
+  section "CURRENT" "Current XDL SDK"
   printf '  %-42s %-10s %s\n' "CHECK" "STATUS" "DETAILS"
   case "$INSTALLED_SDK_STATE" in
     none)
@@ -249,7 +259,8 @@ cleanup_residual_sdk_packages() {
 print_same_version_result() {
   section "RESULT" "XDL SDK is ready to use"
   printf '  %-24s %s\n' "Installed version" "$INSTALLED_SDK_VERSION"
-  printf '  %-24s %s\n' "Requested version" "$SDK_VERSION"
+  printf '  %-24s %s\n' "Version" "$SDK_VERSION"
+  printf '  %-24s %s\n' "Selected package" "$SDK_FILE"
   printf '  %-24s %s%s%s\n' "Required action" "$C_GREEN" "None — the requested SDK is already installed" "$C_RESET"
 
   printf '\n%sOPTIONAL: REINSTALL THIS VERSION%s\n' "$C_BOLD" "$C_RESET"
@@ -297,16 +308,18 @@ select_artifact() {
   case "$SELECTED_ARCH" in
     x86_64)
       SDK_URL="$X86_URL" SDK_FILE="$X86_FILE" SDK_SHA256="$X86_SHA256" SDK_SIZE="$X86_SIZE"
+      SDK_PACKAGE_VERSION="1.6.11.3"
       ;;
     aarch64)
       SDK_URL="$ARM_URL" SDK_FILE="$ARM_FILE" SDK_SHA256="$ARM_SHA256" SDK_SIZE="$ARM_SIZE"
+      SDK_PACKAGE_VERSION="1.6.11.4"
       ;;
     *) fail "unsupported architecture '$SELECTED_ARCH'; choose x86_64 or aarch64" ;;
   esac
 }
 
 inspect_system() {
-  section "1/5" "System compatibility"
+  section "SYSTEM" "Your computer"
   printf '  %-42s %-10s %s\n' "CHECK" "STATUS" "DETAILS"
 
   if [[ ! -r /etc/os-release ]]; then
@@ -328,20 +341,18 @@ inspect_system() {
 
   HOST_ARCH="$(normalize_arch "$(uname -m)")"
   if [[ "$HOST_ARCH" == "$SELECTED_ARCH" ]]; then
-    status_row "CPU architecture" "OK" "$HOST_ARCH"
+    status_row "Computer type" "OK" "64-bit ${HOST_ARCH}"
   elif [[ "$DOWNLOAD_ONLY" -eq 1 || "$CHECK_ONLY" -eq 1 ]]; then
-    status_row "CPU architecture" "WARNING" "host=$HOST_ARCH, selected=$SELECTED_ARCH"
+    status_row "Computer type" "WARNING" "computer=$HOST_ARCH, package=$SELECTED_ARCH"
   else
-    status_row "CPU architecture" "FAILED" "host=$HOST_ARCH, selected=$SELECTED_ARCH"
+    status_row "Computer type" "FAILED" "computer=$HOST_ARCH, package=$SELECTED_ARCH"
     FAILED_CHECKS=$((FAILED_CHECKS + 1))
   fi
 
-  status_row "Linux kernel" "OK" "$(uname -r)"
-
   if command -v dpkg-query >/dev/null && command -v apt-get >/dev/null; then
-    status_row "Package manager" "OK" "APT / dpkg"
+    :
   else
-    status_row "Package manager" "FAILED" "apt-get and dpkg-query are required"
+    status_row "Software installation service" "FAILED" "required system service is unavailable"
     FAILED_CHECKS=$((FAILED_CHECKS + 1))
   fi
 
@@ -350,56 +361,68 @@ inspect_system() {
     audit_output="$(dpkg --audit 2>/dev/null || true)"
   fi
   if [[ -z "$audit_output" ]]; then
-    status_row "Package database" "OK" "no incomplete packages detected"
+    if command -v dpkg-query >/dev/null && command -v apt-get >/dev/null; then
+      status_row "System services" "OK" "ready"
+    fi
   else
-    status_row "Package database" "BLOCKED" "repair is required before installation"
+    status_row "System software status" "BLOCKED" "repair is required before installation"
     printf '%s\n' "$audit_output" | sed 's/^/      /'
     PACKAGE_DB_BROKEN=1
     FAILED_CHECKS=$((FAILED_CHECKS + 1))
   fi
 
   if [[ "$DOWNLOAD_ONLY" -eq 1 || "$CHECK_ONLY" -eq 1 ]]; then
-    status_row "Administrator access" "SKIPPED" "not used in this mode"
+    :
   elif [[ "$EUID" -eq 0 ]]; then
-    status_row "Administrator access" "OK" "running as root"
+    status_row "Installation permission" "OK" "available"
   elif command -v sudo >/dev/null; then
-    status_row "Administrator access" "OK" "sudo is available"
+    status_row "Installation permission" "OK" "available"
   else
-    status_row "Administrator access" "FAILED" "sudo or root access is required"
+    status_row "Installation permission" "FAILED" "administrator access is required"
     FAILED_CHECKS=$((FAILED_CHECKS + 1))
   fi
 }
 
 build_dependency_list() {
-  DEP_NAMES=(coreutils libc6 libstdc++6 dctrl-tools build-essential)
-  DEP_PURPOSES=(
-    "file size and SHA-256 verification tools"
-    "GNU C runtime library"
-    "GNU C++ runtime library"
-    "Debian package relationship tools"
-    "compiler and build toolchain"
-  )
+  # Only list packages used directly by this wrapper. The SDK .run installer and
+  # its Debian packages resolve runtime, compiler, DKMS, and kernel dependencies.
+  DEP_NAMES=(coreutils)
+  DEP_PURPOSES=("file size and SHA-256 verification tools")
   if [[ "$LOCAL_PACKAGE_STATE" != "verified" ]]; then
     DEP_NAMES=(curl ca-certificates "${DEP_NAMES[@]}")
     DEP_PURPOSES=("secure SDK download" "TLS certificate validation" "${DEP_PURPOSES[@]}")
   fi
-  DEP_NAMES+=(dkms "linux-headers-$(uname -r)")
-  DEP_PURPOSES+=("RPP kernel module management" "headers for the running kernel")
 }
 
 inspect_dependencies() {
   MISSING_PACKAGES=()
-  section "2/5" "Required packages and libraries"
-  printf '  %-42s %-10s %s\n' "PACKAGE / LIBRARY" "STATUS" "PURPOSE"
   local index package
   for index in "${!DEP_NAMES[@]}"; do
     package="${DEP_NAMES[$index]}"
-    if package_installed "$package"; then
-      status_row "$package" "OK" "${DEP_PURPOSES[$index]}"
-    else
-      status_row "$package" "MISSING" "${DEP_PURPOSES[$index]}"
+    if ! package_installed "$package"; then
       MISSING_PACKAGES+=("$package")
+      ADVISORY_CHECKS=$((ADVISORY_CHECKS + 1))
     fi
+  done
+
+  section "REQUIREMENTS" "Installation requirements"
+  if (( ${#MISSING_PACKAGES[@]} == 0 )); then
+    status_row "Required setup tools" "OK" "available"
+    return
+  fi
+
+  printf '  %-42s %-10s %s\n' "MISSING ITEM" "STATUS" "WHY IT IS NEEDED"
+  for index in "${!MISSING_PACKAGES[@]}"; do
+    package="${MISSING_PACKAGES[$index]}"
+    local purpose="required by this installer"
+    local dep_index
+    for dep_index in "${!DEP_NAMES[@]}"; do
+      if [[ "${DEP_NAMES[$dep_index]}" == "$package" ]]; then
+        purpose="${DEP_PURPOSES[$dep_index]}"
+        break
+      fi
+    done
+    status_row "$package" "WARNING" "$purpose"
   done
 }
 
@@ -409,7 +432,6 @@ install_missing_dependencies() {
   fi
 
   if [[ "$CHECK_ONLY" -eq 1 ]]; then
-    FAILED_CHECKS=$((FAILED_CHECKS + ${#MISSING_PACKAGES[@]}))
     return
   fi
 
@@ -432,13 +454,12 @@ install_missing_dependencies() {
 }
 
 inspect_download_readiness() {
-  section "3/5" "SDK package source and storage readiness"
+  section "PACKAGE" "SDK installation package"
   printf '  %-42s %-10s %s\n' "CHECK" "STATUS" "DETAILS"
 
   if [[ "$LOCAL_PACKAGE_STATE" == "verified" ]]; then
-    status_row "Local SDK package" "OK" "$SDK_PATH"
-    status_row "Package integrity" "OK" "file size and SHA-256 verified"
-    status_row "Network access" "SKIPPED" "not required for local installation"
+    status_row "Installation package" "OK" "$SDK_FILE"
+    status_row "Package security check" "OK" "verified and safe to use"
   elif [[ "$LOCAL_PACKAGE_STATE" == "invalid" ]]; then
     status_row "Local SDK package" "WARNING" "$SDK_PATH failed integrity verification; online replacement required"
   else
@@ -483,15 +504,18 @@ inspect_download_readiness() {
     fi
   fi
 
-  status_row "Integrity metadata" "OK" "SHA-256 is published for this SDK package"
-  status_row "Selected package" "OK" "$SDK_FILE"
 }
 
 print_plan() {
   local operation_mode="download and install"
+  [[ "$LOCAL_PACKAGE_STATE" == "verified" ]] && operation_mode="install verified local package"
   [[ "$DOWNLOAD_ONLY" -eq 1 ]] && operation_mode="download only"
   [[ "$CHECK_ONLY" -eq 1 ]] && operation_mode="readiness check only"
-  section "4/5" "Installation plan"
+  if [[ "$CHECK_ONLY" -eq 1 ]]; then
+    section "SUMMARY" "What will be installed"
+  else
+    section "SUMMARY" "Installation plan"
+  fi
   printf '  %-24s %s\n' "Product" "$PRODUCT_NAME"
   printf '  %-24s %s\n' "Version" "$SDK_VERSION"
   printf '  %-24s %s\n' "Operating system" "$OS_NAME"
@@ -502,8 +526,10 @@ print_plan() {
   else
     printf '  %-24s %s\n' "Package source" "online download"
   fi
-  printf '  %-24s %s\n' "Download directory" "$DOWNLOAD_DIR"
-  printf '  %-24s %s\n' "Driver" "install (required)"
+  if [[ "$CHECK_ONLY" -eq 0 ]]; then
+    printf '  %-24s %s\n' "Download directory" "$DOWNLOAD_DIR"
+  fi
+  printf '  %-24s %s\n' "Device driver" "included"
   case "$INSTALLED_SDK_STATE" in
     none) printf '  %-24s %s\n' "Existing SDK" "none" ;;
     same) printf '  %-24s %s\n' "Existing SDK" "$INSTALLED_SDK_VERSION (already installed)" ;;
@@ -517,11 +543,11 @@ print_plan() {
     unknown) printf '  %-24s %s\n' "Existing SDK" "detected; version unknown" ;;
     residual) printf '  %-24s %s\n' "Existing SDK" "previous package remnants detected" ;;
   esac
-  printf '  %-24s %s\n' "Mode" "$operation_mode"
+  printf '  %-24s %s\n' "Operation" "$operation_mode"
 }
 
 print_remediation() {
-  section "NEXT" "How to resolve the failed checks"
+  section "ACTION REQUIRED" "What you need to do"
 
   if [[ "$PACKAGE_DB_BROKEN" -eq 1 ]]; then
     printf '\n  Repair the Debian package database:\n\n'
@@ -536,15 +562,6 @@ print_remediation() {
     printf ' %q' "${MISSING_PACKAGES[@]}"
     printf '\n'
 
-    local missing_package
-    for missing_package in "${MISSING_PACKAGES[@]}"; do
-      if [[ "$SELECTED_ARCH" == "aarch64" && "$missing_package" == linux-headers-* ]]; then
-        printf '\n  ARM vendor-kernel note:\n'
-        printf '  If APT cannot locate %s, obtain headers that exactly match\n' "$missing_package"
-        printf '  the board image and uname -r from the board vendor or XDL Technical Support.\n'
-        break
-      fi
-    done
   elif [[ "$CURL_UNAVAILABLE" -eq 1 ]]; then
     printf '\n  Restore the required download command:\n\n'
     printf '    sudo apt update\n'
@@ -577,6 +594,17 @@ print_remediation() {
 
   printf '\n  Re-run the read-only assessment after completing the actions above:\n\n'
   printf '    bash install.sh --check-only\n\n'
+}
+
+print_ready_result() {
+  printf '\n%s%s' "$C_GREEN" "$C_BOLD"
+  printf '%s\n' '============================================================'
+  printf '  READY TO INSTALL XDL SDK %s\n' "$SDK_VERSION"
+  printf '%s%s\n' '============================================================' "$C_RESET"
+  printf '  Your computer and installation package are ready.\n'
+  printf '  No changes were made during this check.\n\n'
+  printf '  %sNext step:%s\n' "$C_BOLD" "$C_RESET"
+  printf '    bash install.sh\n\n'
 }
 
 confirm_plan() {
@@ -639,7 +667,7 @@ download_sdk() {
   TEMP_PATH="$SDK_PATH.tmp"
   trap 'rm -f "${TEMP_PATH:-}"' EXIT
 
-  section "5/5" "SDK package preparation"
+  section "PREPARE" "Preparing the SDK package"
   if verify_installer "$SDK_PATH"; then
     success "Using verified local package: $SDK_PATH"
     return
@@ -660,21 +688,118 @@ download_sdk() {
 }
 
 install_sdk() {
-  local args=()
+  local args=() install_status log_status
   [[ "$ASSUME_YES" -eq 1 ]] && args+=(-i -y)
 
   section "INSTALL" "Installing ${PRODUCT_NAME} ${SDK_VERSION}"
-  run_as_root bash "$SDK_PATH" "${args[@]}"
+  INSTALL_LOG="$DOWNLOAD_DIR/install-$(date '+%Y%m%d-%H%M%S').log"
+  info "A complete installation log will be saved to: $INSTALL_LOG"
+
+  set +e
+  run_as_root bash "$SDK_PATH" "${args[@]}" 2>&1 | tee "$INSTALL_LOG" | format_sdk_output
+  local pipeline_status=("${PIPESTATUS[@]}")
+  set -e
+  install_status="${pipeline_status[0]}"
+  log_status="${pipeline_status[1]}"
+
+  [[ "$log_status" -eq 0 ]] || warn "The SDK installation ran, but the support log could not be saved completely."
+  [[ "$install_status" -eq 0 ]] || fail "SDK installation did not complete. Review the highlighted error above or share this log with XDL Support: $INSTALL_LOG"
   success "SDK installer completed"
 }
 
+format_sdk_output() {
+  local line phase=0 driver_completed=0 previous_blank=0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ -z "$line" ]]; then
+      if [[ "$previous_blank" -eq 0 ]]; then printf '\n'; fi
+      previous_blank=1
+      continue
+    fi
+    previous_blank=0
+    case "$line" in
+      "Starting installation..."|"extracting package...")
+        if [[ "$phase" -lt 1 ]]; then
+          install_phase 1 "Preparing installation files" "Unpacking the verified SDK package. This may take a few minutes."
+          phase=1
+        fi
+        ;;
+      *"step 1/2: copying payload"*)
+        info "Reading the SDK package..."
+        ;;
+      *"this can take several minutes"*|*"progress below if the system supports it"*|*"records in"|*"records out")
+        ;;
+      *"bytes"*" copied,"*)
+        ;;
+      *"payload copied"*)
+        success "SDK package read successfully"
+        ;;
+      *"step 2/2: decompressing archive"*)
+        info "Unpacking installation files..."
+        ;;
+      *"progress updates every"*)
+        ;;
+      *"extraction completed"*)
+        success "Installation files are ready"
+        ;;
+      "current version:"*|"Current Azurengine SDK version:"*|"auto-confirmation?"*|"packaging system name:"*|"Directory /var/cache/azurengine/ already exists.")
+        ;;
+      *"apt does not have a stable CLI interface"*)
+        ;;
+      "installing prerequisites...")
+        install_phase 2 "Checking system components" "Confirming the software components required by XDL SDK."
+        phase=2
+        ;;
+      "installing prerequisites for video engine and deepsort...")
+        info "Checking multimedia components..."
+        ;;
+      "installed all prerequisites.")
+        success "Required system components are ready"
+        ;;
+      正在选中未选择的软件包*|Selecting\ previously\ unselected\ package*)
+        if [[ "$driver_completed" -eq 1 && "$phase" -lt 5 ]]; then
+          install_phase 5 "Finalizing the SDK" "Installing the remaining SDK components and system configuration."
+          phase=5
+        elif [[ "$phase" -lt 3 ]]; then
+          install_phase 3 "Installing SDK components" "Installing XDL runtime, tools, and supporting components."
+          phase=3
+        fi
+        printf '%s\n' "$line"
+        ;;
+      "Building module:")
+        install_phase 4 "Installing the device driver" "Building the driver for the current Linux system. This can take several minutes."
+        phase=4
+        ;;
+      "DKMS: build completed.")
+        success "Device driver built successfully"
+        ;;
+      "DKMS: install completed.")
+        success "Device driver installed successfully"
+        driver_completed=1
+        ;;
+      "Installation completed.")
+        printf '\n%s%s%s\n' "$C_GREEN" "$C_BOLD" '============================================================'
+        printf '  SDK FILE INSTALLATION COMPLETED\n'
+        printf '%s%s\n' '============================================================' "$C_RESET"
+        ;;
+      *[Ee][Rr][Rr][Oo][Rr]*|*失败*|*错误*)
+        printf '%s%s%s\n' "$C_RED" "$line" "$C_RESET"
+        ;;
+      *[Ww][Aa][Rr][Nn][Ii][Nn][Gg]*|*"not a symbolic link"*|*不是符号链接*|*警告*)
+        printf '%s%s%s\n' "$C_YELLOW" "$line" "$C_RESET"
+        ;;
+      *)
+        printf '%s\n' "$line"
+        ;;
+    esac
+  done
+}
+
 post_install_guidance() {
-  section "VERIFY" "Installation result and next steps"
+  section "COMPLETE" "Installation result"
   if [[ -r /usr/local/rpp/doc/creation_timestamp.txt ]]; then
-    status_row "SDK installation record" "OK" "/usr/local/rpp/doc/creation_timestamp.txt"
-    sed 's/^/      /' /usr/local/rpp/doc/creation_timestamp.txt
+    status_row "XDL SDK" "OK" "version $SDK_VERSION installed"
   else
-    status_row "SDK installation record" "WARNING" "creation timestamp was not found"
+    status_row "XDL SDK" "WARNING" "installation finished; version record was not found"
   fi
 
   local package_count
@@ -685,19 +810,29 @@ post_install_guidance() {
     status_row "Installed SDK packages" "WARNING" "no matching dpkg package was detected"
   fi
 
-  printf '\n  Next steps:\n'
-  printf '    1. Review packages: dpkg -l | grep -Ei "rpp|azurengine|xdl"\n'
-  printf '    2. Reboot the host so the DKMS driver can load automatically.\n'
-  printf '    3. After reboot, run: ae-smi\n'
-  printf '    4. Uninstall with: bash uninstall.sh\n\n'
+  printf '\n%s%s' "$C_GREEN" "$C_BOLD"
+  printf '%s\n' '============================================================'
+  printf '  INSTALLATION SUCCESSFUL — XDL SDK %s\n' "$SDK_VERSION"
+  printf '%s%s\n' '============================================================' "$C_RESET"
+  printf '\n%s%sIMPORTANT: RESTART REQUIRED%s\n' "$C_YELLOW" "$C_BOLD" "$C_RESET"
+  printf '  Restart the computer to activate the XDL device driver:\n\n'
+  printf '    sudo reboot\n\n'
+  printf '  After restart, confirm that the device is available:\n\n'
+  printf '    ae-smi\n\n'
+  printf '  Installation log: %s\n' "$INSTALL_LOG"
+  printf '  To remove XDL SDK later: bash uninstall.sh\n\n'
 }
 
 main() {
   parse_options "$@"
   select_artifact
   banner
-  info "SDK installation starts only after every readiness check passes."
-  info "Run with --check-only for a read-only assessment."
+  if [[ "$CHECK_ONLY" -eq 1 ]]; then
+    printf '%s%sCHECK ONLY%s  No software will be installed and no system settings will change.\n' \
+      "$C_BLUE" "$C_BOLD" "$C_RESET"
+  else
+    info "The installer will check your computer before making any changes."
+  fi
 
   inspect_installed_sdk
 
@@ -727,7 +862,12 @@ main() {
   fi
 
   if [[ "$CHECK_ONLY" -eq 1 ]]; then
-    success "This host is ready for ${PRODUCT_NAME} ${SDK_VERSION}"
+    if (( ADVISORY_CHECKS > 0 )); then
+      print_remediation
+      warn "Assessment completed with $ADVISORY_CHECKS missing package(s); use the commands above, or run the normal installer to add them automatically."
+    else
+      print_ready_result
+    fi
     exit 0
   fi
 
